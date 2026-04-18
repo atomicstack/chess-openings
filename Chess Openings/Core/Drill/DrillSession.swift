@@ -108,6 +108,25 @@ final class DrillSession {
         position = board.position
     }
 
+    /// Apply the next scripted book ply without validating against the
+    /// user. Used to auto-play the opening move when the user is playing
+    /// black, so the drill board is already waiting on the user's reply.
+    /// No-op if the line is exhausted or the next ply cannot be parsed.
+    func autoplayNextBookPly() {
+        guard history.count < line.plies.count else { return }
+        let ply = line.plies[history.count]
+        guard let move = SANParser.parse(move: ply.san, in: position) else { return }
+        preMovePositions.append(position)
+        apply(move)
+        history.append(move)
+        if history.count >= line.plies.count {
+            status = .lineComplete
+            if completedWithoutMistake { correctStreak += 1 }
+        } else {
+            status = .waitingForUser
+        }
+    }
+
     /// Step back one full move (user move + scripted reply) so the user
     /// can retry the same prompt. If the history contains only a single
     /// ply (i.e. the scripted reply didn't happen), that ply is removed.

@@ -161,6 +161,47 @@ final class DrillEngineTests: XCTestCase {
         XCTAssertEqual(session.position.fen, Position.standard.fen)
     }
 
+    @MainActor
+    func test_drillsession_preMovePositions_tracks_positions_for_san_trail() async throws {
+        let line = makeTestLine(["e4", "e5", "Nf3", "Nc6"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        XCTAssertEqual(session.preMovePositions.count, 0)
+
+        // first submit: user e4 + scripted reply e5 -> 2 moves, 2 pre-move positions
+        let e4 = try SanCodec.parse("e4", in: Position.standard)
+        await session.submit(e4)
+        XCTAssertEqual(session.history.count, 2)
+        XCTAssertEqual(session.preMovePositions.count, 2)
+        // first pre-move is the initial position
+        XCTAssertEqual(session.preMovePositions[0].fen, Position.standard.fen)
+        // each entry must allow SAN formatting of the corresponding history move
+        for i in 0..<session.history.count {
+            let san = SanCodec.format(session.history[i], in: session.preMovePositions[i])
+            XCTAssertFalse(san.isEmpty)
+        }
+
+        // second submit: Nf3 + Nc6 -> history 4, preMovePositions 4
+        let nf3 = try SanCodec.parse("Nf3", in: session.position)
+        await session.submit(nf3)
+        XCTAssertEqual(session.history.count, 4)
+        XCTAssertEqual(session.preMovePositions.count, 4)
+
+        // undo steps back one full move: 4 -> 2
+        session.undo()
+        XCTAssertEqual(session.history.count, 2)
+        XCTAssertEqual(session.preMovePositions.count, 2)
+
+        // reset clears entirely
+        session.reset()
+        XCTAssertEqual(session.history.count, 0)
+        XCTAssertEqual(session.preMovePositions.count, 0)
+    }
+
     // helper
     func makeTestLine(_ sans: [String]) -> LineSnapshot {
         let plies = sans.map { san -> BookPly in
