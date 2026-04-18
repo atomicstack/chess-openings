@@ -1,0 +1,21 @@
+{
+  "openings": [
+    { "name": "italian game",          "eco": "c50", "side": "white", "rootSan": ["e4","e5","Nf3","Nc6","Bc4"],          "lineCount": 5 },
+    { "name": "ruy lopez",             "eco": "c60", "side": "white", "rootSan": ["e4","e5","Nf3","Nc6","Bb5"],          "lineCount": 5 },
+    { "name": "scotch game",           "eco": "c45", "side": "white", "rootSan": ["e4","e5","Nf3","Nc6","d4"],           "lineCount": 4 },
+    { "name": "vienna game",           "eco": "c25", "side": "white", "rootSan": ["e4","e5","Nc3"],                      "lineCount": 4 },
+    { "name": "kings gambit",          "eco": "c30", "side": "white", "rootSan": ["e4","e5","f4"],                       "lineCount": 4 },
+    { "name": "danish gambit",         "eco": "c21", "side": "white", "rootSan": ["e4","e5","d4","exd4","c3"],           "lineCount": 4 },
+    { "name": "london system",         "eco": "d02", "side": "white", "rootSan": ["d4","d5","Nf3","Nf6","Bf4"],          "lineCount": 5 },
+    { "name": "queens gambit",         "eco": "d06", "side": "white", "rootSan": ["d4","d5","c4"],                       "lineCount": 5 },
+
+    { "name": "caro-kann defence",     "eco": "b10", "side": "black", "rootSan": ["e4","c6"],                            "lineCount": 5 },
+    { "name": "scandinavian defence",  "eco": "b01", "side": "black", "rootSan": ["e4","d5"],                            "lineCount": 4 },
+    { "name": "french defence",        "eco": "c00", "side": "black", "rootSan": ["e4","e6"],                            "lineCount": 5 },
+    { "name": "sicilian defence",      "eco": "b20", "side": "black", "rootSan": ["e4","c5"],                            "lineCount": 4 },
+    { "name": "kings indian defence",  "eco": "e60", "side": "black", "rootSan": ["d4","Nf6","c4","g6"],                 "lineCount": 5 },
+    { "name": "nimzo-indian defence",  "eco": "e20", "side": "black", "rootSan": ["d4","Nf6","c4","e6","Nc3","Bb4"],     "lineCount": 5 },
+    { "name": "queens gambit declined","eco": "d30", "side": "black", "rootSan": ["d4","d5","c4","e6"],                  "lineCount": 5 },
+    { "name": "slav defence",          "eco": "d10", "side": "black", "rootSan": ["d4","d5","c4","c6"],                  "lineCount": 5 }
+  ]
+}
