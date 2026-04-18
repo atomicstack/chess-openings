@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		342AA28A274A77DED376ECD7 /* ChessKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0DE5732459660659D4D1EDF8 /* ChessKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		C925A4C22F92DB6A00D3C42E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				342AA28A274A77DED376ECD7 /* ChessKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = "Chess Openings";
 			packageProductDependencies = (
+				0DE5732459660659D4D1EDF8 /* ChessKit */,
 			);
 			productName = "Chess Openings";
 			productReference = C925A4B22F92DB6900D3C42E /* Chess Openings.app */;
@@ -195,6 +201,9 @@
 			);
 			mainGroup = C925A4A92F92DB6900D3C42E;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				479B62E3565543ED2806B275 /* XCRemoteSwiftPackageReference "chesskit-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C925A4B32F92DB6900D3C42E /* Products */;
 			projectDirPath = "";
@@ -578,6 +587,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		479B62E3565543ED2806B275 /* XCRemoteSwiftPackageReference "chesskit-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/chesskit-app/chesskit-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.17.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0DE5732459660659D4D1EDF8 /* ChessKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 479B62E3565543ED2806B275 /* XCRemoteSwiftPackageReference "chesskit-swift" */;
+			productName = ChessKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = C925A4AA2F92DB6900D3C42E /* Project object */;
 }
