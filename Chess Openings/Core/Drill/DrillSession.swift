@@ -21,6 +21,16 @@ final class DrillSession {
     private(set) var correctStreak: Int
     private(set) var completedWithoutMistake: Bool
 
+    /// Position immediately before the most recent applied move, or `nil`
+    /// if no move has been applied yet. Exposed so downstream consumers
+    /// (e.g. the audio layer) can classify the last move in context.
+    var lastPreMovePosition: Position? { preMovePositions.last }
+
+    /// The most recent move applied to the board (either the user's
+    /// move or the scripted reply, whichever was last), or `nil` if
+    /// no move has been played yet.
+    var lastAppliedMove: Move? { history.last }
+
     /// chesskit's `Board` is the stateful wrapper that knows how to
     /// apply a move and update `position`. we keep one here and
     /// mirror its `position` on `self` after each mutation.
