@@ -36,6 +36,13 @@ struct BoardView: View {
     let onMove: (Move) -> Void
 
     @State private var selected: Square?
+    @State private var promotionContext: PromotionContext?
+
+    struct PromotionContext: Identifiable {
+        let id = UUID()
+        let from: Square
+        let to: Square
+    }
 
     init(
         position: Position,
@@ -66,6 +73,11 @@ struct BoardView: View {
             .frame(width: side, height: side)
         }
         .aspectRatio(1, contentMode: .fit)
+        .sheet(item: $promotionContext) { ctx in
+            PromotionPickerView(side: sideToMove) { kind in
+                completePromotion(ctx: ctx, kind: kind)
+            }
+        }
     }
 
     @ViewBuilder
@@ -93,9 +105,8 @@ struct BoardView: View {
 
     private func handleTap(on sq: Square) {
         if let from = selected {
-            if let move = legalMove(from: from, to: sq) {
+            if attemptMove(from: from, to: sq) {
                 selected = nil
-                onMove(move)
                 return
             }
             if let piece = position.piece(at: sq), piece.color == position.sideToMove {
@@ -112,17 +123,44 @@ struct BoardView: View {
 
     @discardableResult
     private func performDrop(from: Square, to: Square) -> Bool {
-        guard let move = legalMove(from: from, to: to) else { return false }
-        selected = nil
+        let accepted = attemptMove(from: from, to: to)
+        if accepted { selected = nil }
+        return accepted
+    }
+
+    /// Attempts to apply a move from `from` to `to` against a scratch `Board`
+    /// copy of `position`. If the move is pending promotion, stores a
+    /// `PromotionContext` and defers the final move until the user picks a
+    /// promotion piece; returns `true` in that case as well (the drop/tap is
+    /// considered accepted).
+    private func attemptMove(from: Square, to: Square) -> Bool {
+        var board = Board(position: position)
+        let legals = board.legalMoves(forPieceAt: from)
+        guard legals.contains(to) else { return false }
+        guard let move = board.move(pieceAt: from, to: to) else { return false }
+
+        if case .promotion = board.state {
+            promotionContext = PromotionContext(from: from, to: to)
+            return true
+        }
+
         onMove(move)
         return true
     }
 
-    private func legalMove(from: Square, to: Square) -> Move? {
+    private func completePromotion(ctx: PromotionContext, kind: Piece.Kind) {
         var board = Board(position: position)
-        let legals = board.legalMoves(forPieceAt: from)
-        guard legals.contains(to) else { return nil }
-        return board.move(pieceAt: from, to: to)
+        guard let pending = board.move(pieceAt: ctx.from, to: ctx.to) else {
+            promotionContext = nil
+            return
+        }
+        let finalMove = board.completePromotion(of: pending, to: kind)
+        promotionContext = nil
+        onMove(finalMove)
+    }
+
+    private var sideToMove: Side {
+        position.sideToMove == .white ? .white : .black
     }
 
     private func effectiveHighlights(for sq: Square) -> Set<HighlightKind> {
