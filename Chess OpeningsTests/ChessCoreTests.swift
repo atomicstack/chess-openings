@@ -63,4 +63,19 @@ final class ChessCoreTests: XCTestCase {
         XCTAssertEqual(decoded.annotation, "king pawn")
         XCTAssertTrue(decoded.alternativeSans.isEmpty)
     }
+
+    func test_line_source_decodes_from_string() throws {
+        let json = #""masters""#.data(using: .utf8)!
+        let masters = try JSONDecoder().decode(LineSource.self, from: json)
+        XCTAssertEqual(masters, .masters)
+
+        let json2 = #""open""#.data(using: .utf8)!
+        let open = try JSONDecoder().decode(LineSource.self, from: json2)
+        XCTAssertEqual(open, .open)
+    }
+
+    func test_line_source_encodes_to_string() throws {
+        let data = try JSONEncoder().encode(LineSource.masters)
+        XCTAssertEqual(String(data: data, encoding: .utf8), #""masters""#)
+    }
 }
