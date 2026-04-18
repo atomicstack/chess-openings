@@ -1,0 +1,9 @@
+.superpowers/
+.DS_Store
+xcuserdata/
+*.xcuserstate
+build/
+DerivedData/
+Scripts/SeedBuilder/.seed-cache/
+Scripts/SeedBuilder/build-seed.log
+lichess-api-key.txt
