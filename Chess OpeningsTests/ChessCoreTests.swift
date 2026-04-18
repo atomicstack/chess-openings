@@ -78,4 +78,20 @@ final class ChessCoreTests: XCTestCase {
         let data = try JSONEncoder().encode(LineSource.masters)
         XCTAssertEqual(String(data: data, encoding: .utf8), #""masters""#)
     }
+
+    func test_seed_line_dto_decodes_source_field() throws {
+        let json = """
+        { "name": "g6", "plies": [], "tags": [], "source": "open" }
+        """.data(using: .utf8)!
+        let dto = try JSONDecoder().decode(SeedLineDTO.self, from: json)
+        XCTAssertEqual(dto.source, .open)
+    }
+
+    func test_seed_line_dto_defaults_to_masters_when_source_missing() throws {
+        let json = """
+        { "name": "g6", "plies": [], "tags": [] }
+        """.data(using: .utf8)!
+        let dto = try JSONDecoder().decode(SeedLineDTO.self, from: json)
+        XCTAssertEqual(dto.source, .masters)
+    }
 }
