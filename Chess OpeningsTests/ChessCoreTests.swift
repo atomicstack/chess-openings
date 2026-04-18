@@ -16,4 +16,23 @@ final class ChessCoreTests: XCTestCase {
         XCTAssertEqual(Side.white.ckColor, .white)
         XCTAssertEqual(Side.black.ckColor, .black)
     }
+
+    func test_sancodec_parses_e4_from_start() throws {
+        let pos = Position.standard
+        let move = try SanCodec.parse("e4", in: pos)
+        XCTAssertEqual(move.start.notation, "e2")
+        XCTAssertEqual(move.end.notation, "e4")
+    }
+
+    func test_sancodec_round_trip_e4() throws {
+        let pos = Position.standard
+        let move = try SanCodec.parse("e4", in: pos)
+        let san = SanCodec.format(move, in: pos)
+        XCTAssertEqual(san, "e4")
+    }
+
+    func test_sancodec_rejects_illegal() {
+        let pos = Position.standard
+        XCTAssertThrowsError(try SanCodec.parse("e5", in: pos))
+    }
 }
