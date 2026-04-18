@@ -233,7 +233,8 @@ struct BoardView: View {
     /// Rebuilds `pieceTokens` against the current `position`, preserving ids
     /// where possible so SwiftUI animates the `.position()` change. First
     /// render (`pieceTokens` empty) populates without animation; subsequent
-    /// renders animate via an ease-in-out curve.
+    /// renders animate via a fast-attack ease-out so the motion starts
+    /// immediately on the next frame after the drop.
     private func reconcileTokens() {
         let target = currentPieces()
         if pieceTokens.isEmpty {
@@ -241,7 +242,7 @@ struct BoardView: View {
             return
         }
         let next = Self.reconcile(old: pieceTokens, against: target)
-        withAnimation(.easeInOut(duration: 0.25)) {
+        withAnimation(.easeOut(duration: 0.18)) {
             pieceTokens = next
         }
     }

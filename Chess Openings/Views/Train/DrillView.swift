@@ -9,6 +9,7 @@ struct DrillView: View {
     @Query private var settingsList: [UserSettings]
     @State private var session: DrillSession?
     @State private var hintShown: Bool = false
+    @State private var solutionShown: Bool = false
     @State private var showSettingsSheet: Bool = false
     @State private var audio: AudioService?
 
@@ -55,6 +56,13 @@ struct DrillView: View {
             .presentationDetents([.medium])
         }
         .onAppear { startSessionIfNeeded() }
+        .onChange(of: session?.history.count ?? 0) { _, _ in
+            // Any applied move — user, reply, autoplay, undo, reset —
+            // invalidates whatever hint/solution the user had visible.
+            // Force them to explicitly re-enable for the next move.
+            hintShown = false
+            solutionShown = false
+        }
     }
 
     // MARK: - subviews
@@ -70,24 +78,22 @@ struct DrillView: View {
     }
 
     private func moveListRow(for s: DrillSession) -> some View {
-        HStack(spacing: 8) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(Array(s.history.enumerated()), id: \.offset) { i, move in
-                        let pre = i < s.preMovePositions.count ? s.preMovePositions[i] : Position.standard
-                        let san = SanCodec.format(move, in: pre)
-                        Text(sanLabel(ply: i, san: san))
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
-                    }
+        HStack(alignment: .top, spacing: 8) {
+            FlowLayout(horizontalSpacing: 6, verticalSpacing: 4) {
+                ForEach(Array(s.history.enumerated()), id: \.offset) { i, move in
+                    let pre = i < s.preMovePositions.count ? s.preMovePositions[i] : Position.standard
+                    let san = SanCodec.format(move, in: pre)
+                    Text(sanLabel(ply: i, san: san))
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
                 }
-                .padding(.leading)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             Text(progressLabel(for: s))
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
-                .padding(.trailing)
         }
+        .padding(.horizontal)
     }
 
     private func progressLabel(for s: DrillSession) -> String {
@@ -103,21 +109,31 @@ struct DrillView: View {
         HStack(spacing: 16) {
             Button {
                 hintShown.toggle()
+                if hintShown { solutionShown = false }
             } label: {
                 Label(hintShown ? "hide hint" : "hint", systemImage: "lightbulb")
             }
+            .tint(.yellow)
             .disabled(s.status == .lineComplete)
 
             Button {
-                hintShown = false
+                solutionShown.toggle()
+                if solutionShown { hintShown = false }
+            } label: {
+                Label(solutionShown ? "hide solution" : "solution", systemImage: "eye")
+            }
+            .tint(.purple)
+            .disabled(s.status == .lineComplete)
+
+            Button {
                 s.undo()
             } label: {
                 Label("undo", systemImage: "arrow.uturn.backward")
             }
+            .tint(.orange)
             .disabled(s.history.isEmpty)
 
             Button {
-                hintShown = false
                 s.reset()
                 if opening.side == .black {
                     scheduleBlackSideAutoplay(on: s)
@@ -125,6 +141,7 @@ struct DrillView: View {
             } label: {
                 Label("reset", systemImage: "arrow.clockwise")
             }
+            .tint(.red)
         }
         .padding(.horizontal)
     }
@@ -179,7 +196,7 @@ struct DrillView: View {
         case .mistake(let book, _):
             return "book says \(book.san) — try again"
         case .lineComplete:
-            return "line complete"
+            return "line complete ✓"
         }
     }
 
@@ -187,7 +204,7 @@ struct DrillView: View {
         switch s.status {
         case .waitingForUser, .evaluating: return .primary
         case .mistake:                      return .red
-        case .lineComplete:                 return .blue
+        case .lineComplete:                 return .green
         }
     }
 
@@ -205,11 +222,15 @@ struct DrillView: View {
             map[last.start, default: []].insert(.lastMove)
             map[last.end, default: []].insert(.lastMove)
         }
-        if hintShown, s.status != .lineComplete,
+        if (hintShown || solutionShown), s.status != .lineComplete,
            s.history.count < line.plies.count,
            let move = SANParser.parse(move: line.plies[s.history.count].san, in: s.position) {
+            // Hint shows only the source square; solution reveals the
+            // full move by adding the destination square.
             map[move.start, default: []].insert(.hintFrom)
-            map[move.end, default: []].insert(.hintTo)
+            if solutionShown {
+                map[move.end, default: []].insert(.hintTo)
+            }
         }
         if case .mistake(let book, _) = s.status {
             map[book.move.start, default: []].insert(.hintFrom)
