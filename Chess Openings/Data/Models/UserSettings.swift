@@ -16,8 +16,3 @@ final class UserSettings {
         self.masteryThreshold = masteryThreshold
     }
 }
-
-enum DrillMode: String, Codable, Sendable {
-    case strict
-    case showAndRetry
-}
