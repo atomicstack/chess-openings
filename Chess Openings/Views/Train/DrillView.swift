@@ -113,7 +113,7 @@ struct DrillView: View {
             } label: {
                 Label(hintShown ? "hide hint" : "hint", systemImage: "lightbulb")
             }
-            .tint(.yellow)
+            .tint(.green)
             .disabled(s.status == .lineComplete)
 
             Button {
@@ -122,7 +122,7 @@ struct DrillView: View {
             } label: {
                 Label(solutionShown ? "hide solution" : "solution", systemImage: "eye")
             }
-            .tint(.purple)
+            .tint(.blue)
             .disabled(s.status == .lineComplete)
 
             Button {

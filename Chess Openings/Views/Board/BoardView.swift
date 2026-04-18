@@ -242,7 +242,7 @@ struct BoardView: View {
             return
         }
         let next = Self.reconcile(old: pieceTokens, against: target)
-        withAnimation(.easeOut(duration: 0.18)) {
+        withAnimation(.easeOut(duration: 0.09)) {
             pieceTokens = next
         }
     }
