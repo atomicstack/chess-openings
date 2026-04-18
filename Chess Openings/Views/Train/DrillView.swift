@@ -103,7 +103,9 @@ struct DrillView: View {
             Button {
                 hintShown = false
                 s.reset()
-                if opening.side == .black { s.autoplayNextBookPly() }
+                if opening.side == .black {
+                    scheduleBlackSideAutoplay(on: s)
+                }
             } label: {
                 Label("reset", systemImage: "arrow.clockwise")
             }
@@ -127,10 +129,20 @@ struct DrillView: View {
             masteryThreshold: threshold,
             initialStreak: initialStreak
         )
+        session = s
         if opening.side == .black {
+            scheduleBlackSideAutoplay(on: s)
+        }
+    }
+
+    /// For black-side openings, wait ~750ms after the board is shown before
+    /// auto-playing white's first scripted move. Gives the user a moment to
+    /// orient themselves instead of seeing white's move fly in on appear.
+    private func scheduleBlackSideAutoplay(on s: DrillSession) {
+        Task {
+            try? await Task.sleep(for: .milliseconds(750))
             s.autoplayNextBookPly()
         }
-        session = s
     }
 
     private func promptText(for s: DrillSession) -> String {

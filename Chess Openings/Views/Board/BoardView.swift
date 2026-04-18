@@ -29,6 +29,23 @@ struct SquareToken: Codable, Transferable {
     }
 }
 
+/// Visual identity for a piece that persists across position updates so that
+/// the overlay layer can animate a smooth translation when a piece moves
+/// between squares. Same `id` across reconciles means SwiftUI animates the
+/// `.position` change instead of cross-fading.
+private struct PieceToken: Identifiable {
+    let id: UUID
+    var color: Piece.Color
+    var kind: Piece.Kind
+    var square: Square
+}
+
+private struct PieceEntry {
+    let sq: Square
+    let color: Piece.Color
+    let kind: Piece.Kind
+}
+
 struct BoardView: View {
     let position: Position
     let orientation: Side
@@ -37,6 +54,7 @@ struct BoardView: View {
 
     @State private var selected: Square?
     @State private var promotionContext: PromotionContext?
+    @State private var pieceTokens: [PieceToken] = []
 
     struct PromotionContext: Identifiable {
         let id = UUID()
@@ -59,20 +77,30 @@ struct BoardView: View {
     var body: some View {
         GeometryReader { geo in
             let side = min(geo.size.width, geo.size.height)
-            VStack(spacing: 0) {
-                ForEach(ranks(), id: \.self) { rank in
-                    HStack(spacing: 0) {
-                        ForEach(files(), id: \.self) { fileNumber in
-                            let sq = square(fileNumber: fileNumber, rank: rank)
-                            cell(for: sq, fileNumber: fileNumber, rank: rank)
-                                .frame(width: side / 8, height: side / 8)
+            let cell = side / 8
+            ZStack {
+                VStack(spacing: 0) {
+                    ForEach(ranks(), id: \.self) { rank in
+                        HStack(spacing: 0) {
+                            ForEach(files(), id: \.self) { fileNumber in
+                                let sq = square(fileNumber: fileNumber, rank: rank)
+                                squareCell(for: sq, fileNumber: fileNumber, rank: rank, cellSize: cell)
+                            }
                         }
                     }
                 }
+                .frame(width: side, height: side)
+
+                pieceOverlay(cell: cell)
+                    .frame(width: side, height: side)
+                    .allowsHitTesting(false)
             }
             .frame(width: side, height: side)
         }
         .aspectRatio(1, contentMode: .fit)
+        .onChange(of: fenFingerprint(of: position), initial: true) { _, _ in
+            reconcileTokens()
+        }
         .sheet(item: $promotionContext) { ctx in
             PromotionPickerView(side: sideToMove) { kind in
                 completePromotion(ctx: ctx, kind: kind)
@@ -81,12 +109,12 @@ struct BoardView: View {
     }
 
     @ViewBuilder
-    private func cell(for sq: Square, fileNumber: Int, rank: Int) -> some View {
+    private func squareCell(for sq: Square, fileNumber: Int, rank: Int, cellSize: CGFloat) -> some View {
         let view = SquareView(
             isLight: (fileNumber + rank) % 2 == 1,
-            pieceAssetName: assetName(for: position.piece(at: sq)),
             highlights: effectiveHighlights(for: sq)
         )
+        .frame(width: cellSize, height: cellSize)
         .contentShape(Rectangle())
         .onTapGesture { handleTap(on: sq) }
         .dropDestination(for: SquareToken.self) { tokens, _ in
@@ -95,9 +123,30 @@ struct BoardView: View {
         }
 
         if let piece = position.piece(at: sq), piece.color == position.sideToMove {
-            view.draggable(SquareToken(square: sq))
+            view.draggable(SquareToken(square: sq)) {
+                Image(assetName(color: piece.color, kind: piece.kind))
+                    .resizable().scaledToFit()
+                    .frame(width: cellSize, height: cellSize)
+                    .padding(4)
+            }
         } else {
             view
+        }
+    }
+
+    private func pieceOverlay(cell: CGFloat) -> some View {
+        ZStack {
+            ForEach(pieceTokens) { token in
+                Image(assetName(color: token.color, kind: token.kind))
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: cell, height: cell)
+                    .padding(4)
+                    .position(
+                        x: (displayCol(for: token.square) + 0.5) * cell,
+                        y: (displayRow(for: token.square) + 0.5) * cell
+                    )
+            }
         }
     }
 
@@ -128,11 +177,6 @@ struct BoardView: View {
         return accepted
     }
 
-    /// Attempts to apply a move from `from` to `to` against a scratch `Board`
-    /// copy of `position`. If the move is pending promotion, stores a
-    /// `PromotionContext` and defers the final move until the user picks a
-    /// promotion piece; returns `true` in that case as well (the drop/tap is
-    /// considered accepted).
     private func attemptMove(from: Square, to: Square) -> Bool {
         var board = Board(position: position)
         let legals = board.legalMoves(forPieceAt: from)
@@ -177,31 +221,134 @@ struct BoardView: View {
         return result
     }
 
+    // MARK: - piece-token reconciliation
+
+    /// Rebuilds `pieceTokens` against the current `position`, preserving ids
+    /// where possible so SwiftUI animates the `.position()` change. First
+    /// render (`pieceTokens` empty) populates without animation; subsequent
+    /// renders animate via an ease-in-out curve.
+    private func reconcileTokens() {
+        let target = currentPieces()
+        if pieceTokens.isEmpty {
+            pieceTokens = target.map { PieceToken(id: UUID(), color: $0.color, kind: $0.kind, square: $0.sq) }
+            return
+        }
+        let next = Self.reconcile(old: pieceTokens, against: target)
+        withAnimation(.easeInOut(duration: 0.25)) {
+            pieceTokens = next
+        }
+    }
+
+    private func currentPieces() -> [PieceEntry] {
+        var result: [PieceEntry] = []
+        for f in 1...8 {
+            for r in 1...8 {
+                let sq = square(fileNumber: f, rank: r)
+                if let p = position.piece(at: sq) {
+                    result.append(PieceEntry(sq: sq, color: p.color, kind: p.kind))
+                }
+            }
+        }
+        return result
+    }
+
+    private static func reconcile(old: [PieceToken], against target: [PieceEntry]) -> [PieceToken] {
+        var unmatched = old
+        var result: [PieceToken] = []
+        var remaining: [PieceEntry] = []
+
+        // pass 1: stayed-put — same square, same piece
+        for entry in target {
+            if let idx = unmatched.firstIndex(where: {
+                $0.square == entry.sq && $0.color == entry.color && $0.kind == entry.kind
+            }) {
+                result.append(unmatched.remove(at: idx))
+            } else {
+                remaining.append(entry)
+            }
+        }
+
+        // pass 2: match same-color + same-kind nearest (moves, castling, en passant survivor)
+        var stillRemaining: [PieceEntry] = []
+        for entry in remaining {
+            let candidates: [Int] = unmatched.indices.filter { i in
+                unmatched[i].color == entry.color && unmatched[i].kind == entry.kind
+            }
+            if let best = candidates.min(by: {
+                squareDistance(unmatched[$0].square, entry.sq) < squareDistance(unmatched[$1].square, entry.sq)
+            }) {
+                var tok = unmatched.remove(at: best)
+                tok.square = entry.sq
+                result.append(tok)
+            } else {
+                stillRemaining.append(entry)
+            }
+        }
+
+        // pass 3: match same-color any-kind (promotions)
+        for entry in stillRemaining {
+            let candidates: [Int] = unmatched.indices.filter { i in unmatched[i].color == entry.color }
+            if let best = candidates.min(by: {
+                squareDistance(unmatched[$0].square, entry.sq) < squareDistance(unmatched[$1].square, entry.sq)
+            }) {
+                var tok = unmatched.remove(at: best)
+                tok.square = entry.sq
+                tok.kind = entry.kind
+                result.append(tok)
+            } else {
+                result.append(PieceToken(id: UUID(), color: entry.color, kind: entry.kind, square: entry.sq))
+            }
+        }
+
+        return result
+    }
+
+    private static func squareDistance(_ a: Square, _ b: Square) -> Int {
+        let df = a.file.number - b.file.number
+        let dr = a.rank.value - b.rank.value
+        return df * df + dr * dr
+    }
+
+    /// Stable identity for a position used as the `.onChange` key. Uses FEN
+    /// because `Position` isn't guaranteed `Equatable` across chesskit updates.
+    private func fenFingerprint(of position: Position) -> String {
+        FENParser.convert(position: position)
+    }
+
     // MARK: - geometry
 
     private func ranks() -> [Int] { orientation == .white ? [8,7,6,5,4,3,2,1] : [1,2,3,4,5,6,7,8] }
     private func files() -> [Int] { orientation == .white ? [1,2,3,4,5,6,7,8] : [8,7,6,5,4,3,2,1] }
 
     private func square(fileNumber: Int, rank: Int) -> Square {
-        // chesskit 0.17.0 exposes only Square(_ notation:) publicly; build notation
-        // from the 1-based file number and rank.
         let fileChar = Square.File(fileNumber).rawValue
         return Square("\(fileChar)\(rank)")
     }
 
-    private func assetName(for piece: Piece?) -> String? {
-        guard let p = piece else { return nil }
-        let color = (p.color == .white) ? "w" : "b"
-        let kind: String
-        switch p.kind {
-        case .pawn: kind = "p"
-        case .knight: kind = "n"
-        case .bishop: kind = "b"
-        case .rook: kind = "r"
-        case .queen: kind = "q"
-        case .king: kind = "k"
+    /// Screen column (0..7 left-to-right) for a square given the orientation.
+    private func displayCol(for sq: Square) -> CGFloat {
+        let f = CGFloat(sq.file.number - 1)
+        return orientation == .white ? f : (7 - f)
+    }
+
+    /// Screen row (0..7 top-to-bottom) for a square given the orientation.
+    private func displayRow(for sq: Square) -> CGFloat {
+        let r = CGFloat(sq.rank.value - 1)
+        return orientation == .white ? (7 - r) : r
+    }
+
+    private func assetName(color: Piece.Color, kind: Piece.Kind) -> String {
+        let c = (color == .white) ? "w" : "b"
+        let k: String
+        switch kind {
+        case .pawn: k = "p"
+        case .knight: k = "n"
+        case .bishop: k = "b"
+        case .rook: k = "r"
+        case .queen: k = "q"
+        case .king: k = "k"
         }
-        return color + kind
+        return c + k
     }
 }
 
