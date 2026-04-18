@@ -1,0 +1,8 @@
+{
+  "annotations": {
+    "italian game/4": { "san": "Bc4", "text": "the italian bishop — pressures f7, prepares castling." },
+    "ruy lopez/4":    { "san": "Bb5", "text": "pins the knight that defends e5." },
+    "caro-kann defence/1": { "san": "c6", "text": "prepares d5 without blocking the light-squared bishop." },
+    "french defence/1":    { "san": "e6", "text": "solid, but the c8 bishop becomes the problem piece." }
+  }
+}
