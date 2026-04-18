@@ -128,6 +128,23 @@ final class DrillEngineTests: XCTestCase {
     }
 
     @MainActor
+    func test_progressservice_updates_on_line_complete() {
+        let line = Line(name: "t", plies: [BookPly(san: "e4", uci: "e2e4"), BookPly(san: "e5", uci: "e7e5")])
+        line.mastery = LineProgress()
+        let service = ProgressService()
+
+        service.recordCompletion(line: line, madeMistake: false, threshold: 3)
+        XCTAssertEqual(line.mastery?.correctStreak, 1)
+        service.recordCompletion(line: line, madeMistake: false, threshold: 3)
+        service.recordCompletion(line: line, madeMistake: false, threshold: 3)
+        XCTAssertEqual(line.mastery?.isLearned, true)
+
+        service.recordCompletion(line: line, madeMistake: true, threshold: 3)
+        XCTAssertEqual(line.mastery?.correctStreak, 0)
+        XCTAssertEqual(line.mastery?.isLearned, false)
+    }
+
+    @MainActor
     func test_drillsession_reset_returns_to_start() async throws {
         let line = makeTestLine(["e4", "e5"])
         let session = DrillSession(
