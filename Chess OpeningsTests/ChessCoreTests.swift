@@ -35,4 +35,22 @@ final class ChessCoreTests: XCTestCase {
         let pos = Position.standard
         XCTAssertThrowsError(try SanCodec.parse("e5", in: pos))
     }
+
+    func test_positionbuilder_from_plies() throws {
+        let plies = ["e4", "e5", "Nf3"]
+        let (pos, moves) = try PositionBuilder.build(fromSan: plies)
+        XCTAssertEqual(moves.count, 3)
+        XCTAssertEqual(pos.sideToMove, .black)
+    }
+
+    func test_positionbuilder_rejects_illegal_ply_with_index() {
+        let plies = ["e4", "e9"]
+        XCTAssertThrowsError(try PositionBuilder.build(fromSan: plies)) { error in
+            guard case PositionBuilder.BuildError.illegal(ply: let i, san: let s) = error else {
+                return XCTFail("wrong error: \(error)")
+            }
+            XCTAssertEqual(i, 1)
+            XCTAssertEqual(s, "e9")
+        }
+    }
 }
