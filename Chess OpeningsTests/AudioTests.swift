@@ -108,4 +108,20 @@ final class AudioTests: XCTestCase {
         let sfx = SoundEffect.forMove(move, pre: pre, post: post, byUser: false)
         XCTAssertEqual(sfx, .moveCheck)
     }
+
+    // MARK: - AudioService
+
+    @MainActor
+    func test_audioservice_noop_when_muted() {
+        let svc = AudioService(isEnabled: { false })
+        svc.play(.moveSelf)
+        XCTAssertEqual(svc.lastAttemptedEffect, nil)
+    }
+
+    @MainActor
+    func test_audioservice_records_last_effect_when_enabled() {
+        let svc = AudioService(isEnabled: { true })
+        svc.play(.capture)
+        XCTAssertEqual(svc.lastAttemptedEffect, .capture)
+    }
 }
