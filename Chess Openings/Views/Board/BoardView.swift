@@ -215,7 +215,14 @@ struct BoardView: View {
         if let selected {
             let board = Board(position: position)
             if board.legalMoves(forPieceAt: selected).contains(sq) {
-                result.insert(.legalTarget)
+                // Squares that would capture an opponent piece get a ring
+                // indicator instead of the plain legal-target tint.
+                if let victim = position.piece(at: sq),
+                   victim.color != position.sideToMove {
+                    result.insert(.captureTarget)
+                } else {
+                    result.insert(.legalTarget)
+                }
             }
         }
         return result

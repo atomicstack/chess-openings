@@ -203,6 +203,48 @@ final class DrillEngineTests: XCTestCase {
     }
 
     @MainActor
+    func test_drillsession_onMoveApplied_fires_for_user_and_reply() async throws {
+        let line = makeTestLine(["e4", "e5", "Nf3"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        var events: [(String, Bool)] = []
+        session.onMoveApplied = { move, pre, _, byUser in
+            events.append((SanCodec.format(move, in: pre), byUser))
+        }
+        let e4 = try SanCodec.parse("e4", in: Position.standard)
+        await session.submit(e4)
+
+        XCTAssertEqual(events.count, 2)
+        XCTAssertEqual(events.first?.0, "e4")
+        XCTAssertEqual(events.first?.1, true)
+        XCTAssertEqual(events.last?.0, "e5")
+        XCTAssertEqual(events.last?.1, false)
+    }
+
+    @MainActor
+    func test_drillsession_onMoveApplied_fires_for_autoplay() async throws {
+        let line = makeTestLine(["e4", "e5"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        var events: [(String, Bool)] = []
+        session.onMoveApplied = { move, pre, _, byUser in
+            events.append((SanCodec.format(move, in: pre), byUser))
+        }
+        session.autoplayNextBookPly()
+        XCTAssertEqual(events.count, 1)
+        XCTAssertEqual(events.first?.0, "e4")
+        XCTAssertEqual(events.first?.1, false)
+    }
+
+    @MainActor
     func test_drillsession_accepts_user_capture_constructed_via_board() async throws {
         // repro: user plays a capture via Board.move(pieceAt:to:), which
         // returns a Move with .result = .capture(piece). the oracle's move
@@ -233,6 +275,28 @@ final class DrillEngineTests: XCTestCase {
         await session.submit(exd5)
         XCTAssertEqual(session.history.count, 3, "user capture should be accepted by the session")
         XCTAssertEqual(session.status, .lineComplete)
+    }
+
+    // MARK: - DrillProgress
+
+    func test_drillprogress_white_side_counts_even_indexed_plies() {
+        // line: e4 e5 Nf3 Nc6 Bc4  -> total plies 5, user moves 3
+        XCTAssertEqual(DrillProgress.userMoves(historyCount: 0, totalPlies: 5, side: .white).played, 0)
+        XCTAssertEqual(DrillProgress.userMoves(historyCount: 1, totalPlies: 5, side: .white).played, 1)
+        XCTAssertEqual(DrillProgress.userMoves(historyCount: 2, totalPlies: 5, side: .white).played, 1)
+        XCTAssertEqual(DrillProgress.userMoves(historyCount: 3, totalPlies: 5, side: .white).played, 2)
+        XCTAssertEqual(DrillProgress.userMoves(historyCount: 5, totalPlies: 5, side: .white).played, 3)
+        XCTAssertEqual(DrillProgress.userMoves(historyCount: 0, totalPlies: 5, side: .white).total, 3)
+    }
+
+    func test_drillprogress_black_side_counts_odd_indexed_plies() {
+        // line: e4 e5 Nf3 Nc6 -> total plies 4, user (black) moves 2
+        XCTAssertEqual(DrillProgress.userMoves(historyCount: 0, totalPlies: 4, side: .black).played, 0)
+        XCTAssertEqual(DrillProgress.userMoves(historyCount: 1, totalPlies: 4, side: .black).played, 0)
+        XCTAssertEqual(DrillProgress.userMoves(historyCount: 2, totalPlies: 4, side: .black).played, 1)
+        XCTAssertEqual(DrillProgress.userMoves(historyCount: 3, totalPlies: 4, side: .black).played, 1)
+        XCTAssertEqual(DrillProgress.userMoves(historyCount: 4, totalPlies: 4, side: .black).played, 2)
+        XCTAssertEqual(DrillProgress.userMoves(historyCount: 0, totalPlies: 4, side: .black).total, 2)
     }
 
     // helper

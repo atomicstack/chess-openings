@@ -20,6 +20,12 @@ final class DrillSession {
     /// stay fast; the UI sets a human-friendly delay.
     var scriptedReplyDelayMs: Int = 0
 
+    /// Fires after every move applied to the board — user moves,
+    /// scripted replies, and black-side autoplay openings. Consumers
+    /// (e.g. the audio layer) get the move plus pre/post positions and
+    /// a `byUser` flag so they can classify the event in context.
+    var onMoveApplied: ((Move, Position, Position, Bool) -> Void)?
+
     private(set) var position: Position
     private(set) var history: [Move]
     private(set) var preMovePositions: [Position]
@@ -88,7 +94,7 @@ final class DrillSession {
 
         // match — apply user move via Board
         preMovePositions.append(position)
-        apply(match.move)
+        apply(match.move, byUser: true)
         history.append(match.move)
 
         // apply scripted reply if there is one, after a brief pause so
@@ -100,7 +106,7 @@ final class DrillSession {
                     try? await Task.sleep(for: .milliseconds(scriptedReplyDelayMs))
                 }
                 preMovePositions.append(position)
-                apply(replyMove)
+                apply(replyMove, byUser: false)
                 history.append(replyMove)
             }
         }
@@ -113,9 +119,11 @@ final class DrillSession {
         }
     }
 
-    private func apply(_ move: Move) {
+    private func apply(_ move: Move, byUser: Bool) {
+        let pre = position
         board.move(pieceAt: move.start, to: move.end)
         position = board.position
+        onMoveApplied?(move, pre, position, byUser)
     }
 
     /// Same-chess-move identity: compares only the essential fields that
@@ -140,7 +148,7 @@ final class DrillSession {
         let ply = line.plies[history.count]
         guard let move = SANParser.parse(move: ply.san, in: position) else { return }
         preMovePositions.append(position)
-        apply(move)
+        apply(move, byUser: false)
         history.append(move)
         if history.count >= line.plies.count {
             status = .lineComplete

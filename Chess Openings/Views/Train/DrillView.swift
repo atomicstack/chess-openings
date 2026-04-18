@@ -10,6 +10,7 @@ struct DrillView: View {
     @State private var session: DrillSession?
     @State private var hintShown: Bool = false
     @State private var showSettingsSheet: Bool = false
+    @State private var audio: AudioService?
 
     private var settings: UserSettings? { settingsList.first }
 
@@ -69,18 +70,33 @@ struct DrillView: View {
     }
 
     private func moveListRow(for s: DrillSession) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(Array(s.history.enumerated()), id: \.offset) { i, move in
-                    let pre = i < s.preMovePositions.count ? s.preMovePositions[i] : Position.standard
-                    let san = SanCodec.format(move, in: pre)
-                    Text(sanLabel(ply: i, san: san))
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
+        HStack(spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(Array(s.history.enumerated()), id: \.offset) { i, move in
+                        let pre = i < s.preMovePositions.count ? s.preMovePositions[i] : Position.standard
+                        let san = SanCodec.format(move, in: pre)
+                        Text(sanLabel(ply: i, san: san))
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .padding(.leading)
             }
-            .padding(.horizontal)
+            Text(progressLabel(for: s))
+                .font(.caption.monospaced())
+                .foregroundStyle(.secondary)
+                .padding(.trailing)
         }
+    }
+
+    private func progressLabel(for s: DrillSession) -> String {
+        let p = DrillProgress.userMoves(
+            historyCount: s.history.count,
+            totalPlies: line.plies.count,
+            side: opening.side
+        )
+        return "\(p.played)/\(p.total)"
     }
 
     private func controlsRow(for s: DrillSession) -> some View {
@@ -130,6 +146,14 @@ struct DrillView: View {
             initialStreak: initialStreak
         )
         s.scriptedReplyDelayMs = 750
+        let player = AudioService(isEnabled: { [settingsList] in
+            settingsList.first?.soundsEnabled ?? true
+        })
+        s.onMoveApplied = { move, pre, post, byUser in
+            let sfx = SoundEffect.forMove(move, pre: pre, post: post, byUser: byUser)
+            player.play(sfx)
+        }
+        audio = player
         session = s
         if opening.side == .black {
             scheduleBlackSideAutoplay(on: s)
