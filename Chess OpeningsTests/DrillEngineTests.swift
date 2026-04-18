@@ -64,6 +64,51 @@ final class DrillEngineTests: XCTestCase {
         XCTAssertEqual(session.correctStreak, 0)
     }
 
+    @MainActor
+    func test_drillsession_showandretry_wrong_move_transitions_to_mistake() async throws {
+        let line = makeTestLine(["e4", "e5", "Bc4"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .showAndRetry,
+            masteryThreshold: 3
+        )
+        let d4 = try SanCodec.parse("d4", in: Position.standard)
+        await session.submit(d4)
+
+        switch session.status {
+        case .mistake(let book, let played):
+            XCTAssertEqual(book.san, "e4")
+            XCTAssertEqual(played.end.notation, "d4")
+        default:
+            XCTFail("expected .mistake, got \(session.status)")
+        }
+        XCTAssertEqual(session.correctStreak, 0)
+    }
+
+    @MainActor
+    func test_drillsession_showandretry_recovers_on_book_move() async throws {
+        let line = makeTestLine(["e4", "e5", "Nf3"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .showAndRetry,
+            masteryThreshold: 3
+        )
+        let d4 = try SanCodec.parse("d4", in: Position.standard)
+        await session.submit(d4)
+        XCTAssertTrue(isMistake(session.status))
+
+        let e4 = try SanCodec.parse("e4", in: Position.standard)
+        await session.submit(e4)
+        XCTAssertEqual(session.status, .waitingForUser)
+        XCTAssertEqual(session.history.count, 2)  // recovered + reply
+    }
+
+    private func isMistake(_ s: DrillStatus) -> Bool {
+        if case .mistake = s { return true }; return false
+    }
+
     // helper
     func makeTestLine(_ sans: [String]) -> LineSnapshot {
         let plies = sans.map { san -> BookPly in
