@@ -6,7 +6,7 @@
 
 PROJECT     ?= Chess Openings.xcodeproj
 SCHEME      ?= Chess Openings
-DESTINATION ?= platform=iOS Simulator,name=iPhone 17
+DESTINATION ?= platform=iOS Simulator,name=iPhone 16 Pro
 
 XCB = xcodebuild -project "$(PROJECT)" -scheme "$(SCHEME)" -destination "$(DESTINATION)"
 

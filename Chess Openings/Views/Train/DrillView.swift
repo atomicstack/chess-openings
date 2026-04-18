@@ -129,6 +129,7 @@ struct DrillView: View {
             masteryThreshold: threshold,
             initialStreak: initialStreak
         )
+        s.scriptedReplyDelayMs = 750
         session = s
         if opening.side == .black {
             scheduleBlackSideAutoplay(on: s)

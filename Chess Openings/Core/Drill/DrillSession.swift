@@ -14,6 +14,12 @@ final class DrillSession {
     var mode: DrillMode
     let masteryThreshold: Int
 
+    /// Delay in milliseconds inserted between the user's move and the
+    /// session's scripted reply, so the board animation from the user
+    /// move can resolve before the reply begins. Defaults to 0 so tests
+    /// stay fast; the UI sets a human-friendly delay.
+    var scriptedReplyDelayMs: Int = 0
+
     private(set) var position: Position
     private(set) var history: [Move]
     private(set) var preMovePositions: [Position]
@@ -62,7 +68,7 @@ final class DrillSession {
         status = .evaluating
 
         let candidates = await oracle.acceptableMoves(at: position, history: history)
-        guard let match = candidates.first(where: { $0.move == move }) else {
+        guard let match = candidates.first(where: { Self.sameChessMove($0.move, move) }) else {
             // off-book
             completedWithoutMistake = false
             correctStreak = 0
@@ -85,10 +91,14 @@ final class DrillSession {
         apply(match.move)
         history.append(match.move)
 
-        // apply scripted reply if there is one
+        // apply scripted reply if there is one, after a brief pause so
+        // the user's piece animation can finish before the reply starts
         if history.count < line.plies.count {
             let replyPly = line.plies[history.count]
             if let replyMove = SANParser.parse(move: replyPly.san, in: position) {
+                if scriptedReplyDelayMs > 0 {
+                    try? await Task.sleep(for: .milliseconds(scriptedReplyDelayMs))
+                }
                 preMovePositions.append(position)
                 apply(replyMove)
                 history.append(replyMove)
@@ -106,6 +116,19 @@ final class DrillSession {
     private func apply(_ move: Move) {
         board.move(pieceAt: move.start, to: move.end)
         position = board.position
+    }
+
+    /// Same-chess-move identity: compares only the essential fields that
+    /// define the move semantically. Full `Move ==` is too strict because
+    /// moves produced by `Board.move(pieceAt:to:)` carry different
+    /// metadata (e.g. `.capture(piece)` with a piece-square payload,
+    /// disambiguation, check state) than moves produced by
+    /// `SANParser.parse(...)`, so a legitimate capture played via the
+    /// board won't satisfy `==` against the oracle's parsed candidate.
+    static func sameChessMove(_ a: Move, _ b: Move) -> Bool {
+        return a.start == b.start
+            && a.end == b.end
+            && a.promotedPiece?.kind == b.promotedPiece?.kind
     }
 
     /// Apply the next scripted book ply without validating against the

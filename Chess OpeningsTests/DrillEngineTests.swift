@@ -202,6 +202,39 @@ final class DrillEngineTests: XCTestCase {
         XCTAssertEqual(session.preMovePositions.count, 0)
     }
 
+    @MainActor
+    func test_drillsession_accepts_user_capture_constructed_via_board() async throws {
+        // repro: user plays a capture via Board.move(pieceAt:to:), which
+        // returns a Move with .result = .capture(piece). the oracle's move
+        // comes from SANParser.parse and may differ in metadata
+        // (disambiguation, check state, piece.square), so full Move equality
+        // rejects the capture even though it is the correct book move.
+        let line = makeTestLine(["e4", "d5", "exd5"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+
+        var board = Board(position: .standard)
+        guard let e4 = board.move(pieceAt: Square("e2"), to: Square("e4")) else {
+            XCTFail("e4 should be legal"); return
+        }
+        await session.submit(e4)
+        XCTAssertEqual(session.history.count, 2)
+
+        var playerBoard = Board(position: session.position)
+        guard let exd5 = playerBoard.move(pieceAt: Square("e4"), to: Square("d5")) else {
+            XCTFail("exd5 should be legal"); return
+        }
+        if case .capture = exd5.result {} else { XCTFail("exd5 must be a capture") }
+
+        await session.submit(exd5)
+        XCTAssertEqual(session.history.count, 3, "user capture should be accepted by the session")
+        XCTAssertEqual(session.status, .lineComplete)
+    }
+
     // helper
     func makeTestLine(_ sans: [String]) -> LineSnapshot {
         let plies = sans.map { san -> BookPly in
