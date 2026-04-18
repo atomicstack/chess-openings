@@ -18,6 +18,15 @@ struct Chess_OpeningsApp: App {
         }
     }()
 
+    init() {
+        let context = sharedModelContainer.mainContext
+        do {
+            try SeedLoader().seedIfEmpty(context: context)
+        } catch {
+            print("seed failed: \(error)")
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()
