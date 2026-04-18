@@ -53,4 +53,14 @@ final class ChessCoreTests: XCTestCase {
             XCTAssertEqual(s, "e9")
         }
     }
+
+    func test_bookply_codable_round_trip() throws {
+        let ply = BookPly(san: "e4", uci: "e2e4", annotation: "king pawn", alternativeSans: [])
+        let data = try JSONEncoder().encode(ply)
+        let decoded = try JSONDecoder().decode(BookPly.self, from: data)
+        XCTAssertEqual(decoded.san, "e4")
+        XCTAssertEqual(decoded.uci, "e2e4")
+        XCTAssertEqual(decoded.annotation, "king pawn")
+        XCTAssertTrue(decoded.alternativeSans.isEmpty)
+    }
 }
