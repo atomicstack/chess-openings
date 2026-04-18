@@ -34,16 +34,7 @@ struct LibraryListView: View {
                 .accessibilityLabel("new opening")
             }
             .sheet(isPresented: $showingNew) {
-                // placeholder; replaced with NewOpeningView in task 9.2
-                NavigationStack {
-                    Text("new opening")
-                        .navigationTitle("new opening")
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("cancel") { showingNew = false }
-                            }
-                        }
-                }
+                NewOpeningView()
             }
         }
     }
