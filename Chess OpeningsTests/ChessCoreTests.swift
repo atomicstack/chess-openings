@@ -94,4 +94,14 @@ final class ChessCoreTests: XCTestCase {
         let dto = try JSONDecoder().decode(SeedLineDTO.self, from: json)
         XCTAssertEqual(dto.source, .masters)
     }
+
+    func test_line_model_stores_source() {
+        let line = Line(name: "g6", plies: [], source: .open)
+        XCTAssertEqual(line.source, .open)
+    }
+
+    func test_line_model_defaults_to_masters() {
+        let line = Line(name: "g6", plies: [])
+        XCTAssertEqual(line.source, .masters)
+    }
 }
