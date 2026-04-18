@@ -1,5 +1,33 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import ChessKit
+
+/// Drag token representing a source square. Uses file number (1..8) and rank
+/// value (1..8) because chesskit's `Square` is not itself `Codable`-friendly
+/// for direct transfer, and the pair uniquely identifies a square.
+struct SquareToken: Codable, Transferable {
+    let file: Int
+    let rank: Int
+
+    static var transferRepresentation: some TransferRepresentation {
+        CodableRepresentation(contentType: .data)
+    }
+
+    var square: Square {
+        let fileChar = Square.File(file).rawValue
+        return Square("\(fileChar)\(rank)")
+    }
+
+    init(file: Int, rank: Int) {
+        self.file = file
+        self.rank = rank
+    }
+
+    init(square: Square) {
+        self.file = square.file.number
+        self.rank = square.rank.value
+    }
+}
 
 struct BoardView: View {
     let position: Position
@@ -29,14 +57,8 @@ struct BoardView: View {
                     HStack(spacing: 0) {
                         ForEach(files(), id: \.self) { fileNumber in
                             let sq = square(fileNumber: fileNumber, rank: rank)
-                            SquareView(
-                                isLight: (fileNumber + rank) % 2 == 1,
-                                pieceAssetName: assetName(for: position.piece(at: sq)),
-                                highlights: effectiveHighlights(for: sq)
-                            )
-                            .frame(width: side / 8, height: side / 8)
-                            .contentShape(Rectangle())
-                            .onTapGesture { handleTap(on: sq) }
+                            cell(for: sq, fileNumber: fileNumber, rank: rank)
+                                .frame(width: side / 8, height: side / 8)
                         }
                     }
                 }
@@ -44,6 +66,27 @@ struct BoardView: View {
             .frame(width: side, height: side)
         }
         .aspectRatio(1, contentMode: .fit)
+    }
+
+    @ViewBuilder
+    private func cell(for sq: Square, fileNumber: Int, rank: Int) -> some View {
+        let view = SquareView(
+            isLight: (fileNumber + rank) % 2 == 1,
+            pieceAssetName: assetName(for: position.piece(at: sq)),
+            highlights: effectiveHighlights(for: sq)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture { handleTap(on: sq) }
+        .dropDestination(for: SquareToken.self) { tokens, _ in
+            guard let token = tokens.first else { return false }
+            return performDrop(from: token.square, to: sq)
+        }
+
+        if let piece = position.piece(at: sq), piece.color == position.sideToMove {
+            view.draggable(SquareToken(square: sq))
+        } else {
+            view
+        }
     }
 
     // MARK: - interaction
@@ -55,7 +98,6 @@ struct BoardView: View {
                 onMove(move)
                 return
             }
-            // fallthrough: allow reselection of a friendly piece
             if let piece = position.piece(at: sq), piece.color == position.sideToMove {
                 selected = sq
             } else {
@@ -66,6 +108,14 @@ struct BoardView: View {
                 selected = sq
             }
         }
+    }
+
+    @discardableResult
+    private func performDrop(from: Square, to: Square) -> Bool {
+        guard let move = legalMove(from: from, to: to) else { return false }
+        selected = nil
+        onMove(move)
+        return true
     }
 
     private func legalMove(from: Square, to: Square) -> Move? {
