@@ -109,6 +109,41 @@ final class DrillEngineTests: XCTestCase {
         if case .mistake = s { return true }; return false
     }
 
+    @MainActor
+    func test_drillsession_undo_steps_back_one_full_move() async throws {
+        let line = makeTestLine(["e4", "e5", "Nf3", "Nc6"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        let e4 = try SanCodec.parse("e4", in: Position.standard)
+        await session.submit(e4)
+        XCTAssertEqual(session.history.count, 2)
+
+        session.undo()
+        XCTAssertEqual(session.history.count, 0)
+        XCTAssertEqual(session.status, .waitingForUser)
+    }
+
+    @MainActor
+    func test_drillsession_reset_returns_to_start() async throws {
+        let line = makeTestLine(["e4", "e5"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        let e4 = try SanCodec.parse("e4", in: Position.standard)
+        await session.submit(e4)
+
+        session.reset()
+        XCTAssertEqual(session.history.count, 0)
+        XCTAssertEqual(session.position.fen, Position.standard.fen)
+    }
+
     // helper
     func makeTestLine(_ sans: [String]) -> LineSnapshot {
         let plies = sans.map { san -> BookPly in

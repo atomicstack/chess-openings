@@ -97,4 +97,38 @@ final class DrillSession {
         board.move(pieceAt: move.start, to: move.end)
         position = board.position
     }
+
+    /// Step back one full move (user move + scripted reply) so the user
+    /// can retry the same prompt. If the history contains only a single
+    /// ply (i.e. the scripted reply didn't happen), that ply is removed.
+    func undo() {
+        guard !history.isEmpty else { return }
+        let stepsBack = min(2, history.count)
+        history.removeLast(stepsBack)
+        let preCount = min(stepsBack, preMovePositions.count)
+        preMovePositions.removeLast(preCount)
+        rebuildBoardFromHistory()
+        status = .waitingForUser
+    }
+
+    /// Return to the initial position and clear all drill state.
+    func reset() {
+        history = []
+        preMovePositions = []
+        board = Board(position: .standard)
+        position = board.position
+        status = .waitingForUser
+        completedWithoutMistake = true
+    }
+
+    /// chesskit's `Board` does not support undo, so we rebuild it
+    /// by replaying `history` from the standard starting position.
+    private func rebuildBoardFromHistory() {
+        var replay = Board(position: .standard)
+        for move in history {
+            replay.move(pieceAt: move.start, to: move.end)
+        }
+        board = replay
+        position = board.position
+    }
 }
