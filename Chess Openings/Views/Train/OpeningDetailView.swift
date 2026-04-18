@@ -19,6 +19,14 @@ struct OpeningDetailView: View {
             if let first = opening.lines.first {
                 NavigationLink("drill all") { DrillView(opening: opening, line: first) }
             }
+            if !opening.isSeed {
+                NavigationLink {
+                    LineEditorView(opening: opening)
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .accessibilityLabel("add line")
+            }
         }
     }
 
