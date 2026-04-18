@@ -6,6 +6,7 @@ final class UserSettings {
     var drillModeRaw: String
     var masteryThreshold: Int
     var soundsEnabled: Bool = true
+    var seededVersion: Int = 0
 
     var drillMode: DrillMode {
         get { DrillMode(rawValue: drillModeRaw) ?? .strict }
@@ -15,10 +16,12 @@ final class UserSettings {
     init(
         drillMode: DrillMode = .strict,
         masteryThreshold: Int = 3,
-        soundsEnabled: Bool = true
+        soundsEnabled: Bool = true,
+        seededVersion: Int = 0
     ) {
         self.drillModeRaw = drillMode.rawValue
         self.masteryThreshold = masteryThreshold
         self.soundsEnabled = soundsEnabled
+        self.seededVersion = seededVersion
     }
 }

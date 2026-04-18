@@ -104,4 +104,9 @@ final class ChessCoreTests: XCTestCase {
         let line = Line(name: "g6", plies: [])
         XCTAssertEqual(line.source, .masters)
     }
+
+    func test_user_settings_defaults_seeded_version_to_zero() {
+        let s = UserSettings()
+        XCTAssertEqual(s.seededVersion, 0)
+    }
 }
