@@ -14,8 +14,25 @@ my $CACHE_DIR = "Scripts/SeedBuilder/.seed-cache";
 my $LOG_PATH  = "Scripts/SeedBuilder/build-seed.log";
 my $OUT_PATH  = "Chess Openings/Resources/openings.json";
 my $MAX_PLIES = 20;
-my $MIN_GAMES = 50;
-my $API       = "https://explorer.lichess.ovh/masters";
+my $MIN_PLIES = 10;
+
+my %SOURCES = (
+    masters => {
+        api            => "https://explorer.lichess.ovh/masters",
+        min_games      => 50,
+        min_games_soft => 5,
+        extra_params   => {},
+    },
+    open => {
+        api            => "https://explorer.lichess.ovh/lichess",
+        min_games      => 500,
+        min_games_soft => 50,
+        extra_params   => {
+            ratings => "2200,2500",
+            speeds  => "blitz,rapid,classical",
+        },
+    },
+);
 
 make_path($CACHE_DIR);
 make_path("Chess Openings/Resources");
@@ -67,20 +84,23 @@ my $cache_hits  = 0;
 my $cache_miss  = 0;
 
 sub explorer {
-    my (%q) = @_;
+    my ($source, %q) = @_;
     $req_count++;
-    my $key  = md5_hex(join("|", map { "$_=$q{$_}" } sort keys %q));
+    my $cfg = $SOURCES{$source} or die "unknown source '$source'";
+    my %merged = (%q, %{ $cfg->{extra_params} });
+    my $prefix = $source eq "masters" ? "" : "$source|";
+    my $key  = md5_hex($prefix . join("|", map { "$_=$merged{$_}" } sort keys %merged));
     my $file = "$CACHE_DIR/$key.json";
-    my $play_preview = $q{play} // "";
+    my $play_preview = $merged{play} // "";
     $play_preview = substr($play_preview, 0, 60) . "..." if length($play_preview) > 60;
     if (-e $file) {
         $cache_hits++;
-        logmsg("  explorer #$req_count CACHE play=[$play_preview]");
+        logmsg("  explorer[$source] #$req_count CACHE play=[$play_preview]");
         open my $fh, "<", $file; local $/; return decode_json(scalar <$fh>);
     }
     $cache_miss++;
-    my $url = $API . "?" . join("&", map { "$_=$q{$_}" } sort keys %q);
-    logmsg("  explorer #$req_count FETCH play=[$play_preview]");
+    my $url = $cfg->{api} . "?" . join("&", map { "$_=$merged{$_}" } sort keys %merged);
+    logmsg("  explorer[$source] #$req_count FETCH play=[$play_preview]");
     sleep(1);
     my %opts;
     $opts{headers} = { Authorization => $AUTH_HEADER } if $AUTH_HEADER;
@@ -91,14 +111,16 @@ sub explorer {
 }
 
 sub walk_line {
-    my ($opening_name, $history_uci, $depth) = @_;
+    my ($source, $opening_name, $history_uci, $depth) = @_;
     return [] if $depth >= $MAX_PLIES;
+    my $cfg = $SOURCES{$source};
 
     my $query_play = @$history_uci ? join(",", @$history_uci) : "";
-    my $r = explorer(play => $query_play, moves => 5, topGames => 0, recentGames => 0);
+    my $r = explorer($source, play => $query_play, moves => 5, topGames => 0, recentGames => 0);
 
     my $total = ($r->{white} // 0) + ($r->{draws} // 0) + ($r->{black} // 0);
-    return [] if $total < $MIN_GAMES;
+    my $threshold = $depth < $MIN_PLIES ? $cfg->{min_games_soft} : $cfg->{min_games};
+    return [] if $total < $threshold;
 
     my $moves = $r->{moves} // [];
     return [] unless @$moves;
@@ -113,7 +135,7 @@ sub walk_line {
     }
 
     my $ply = { san => $san, uci => $uci, annotation => $ann, alternativeSans => [] };
-    my $rest = walk_line($opening_name, [@$history_uci, $uci], $depth + 1);
+    my $rest = walk_line($source, $opening_name, [@$history_uci, $uci], $depth + 1);
     return [$ply, @$rest];
 }
 
@@ -122,42 +144,43 @@ sub build_opening {
 
     logmsg("opening: $o->{name} (eco $o->{eco}, $o->{side}, target lineCount=$o->{lineCount})");
 
-    my @history_uci;
-    for my $san (@{$o->{rootSan}}) {
-        my $query_play = @history_uci ? join(",", @history_uci) : "";
-        my $r = explorer(play => $query_play, moves => 12, topGames => 0, recentGames => 0);
-        my ($m) = grep { $_->{san} eq $san } @{$r->{moves} // []};
-        die "root san '$san' not found in explorer moves for opening '$o->{name}'" unless $m;
-        push @history_uci, $m->{uci};
-    }
+    my @all_lines;
+    for my $source (qw(masters open)) {
+        logmsg("  [source=$source] resolving root line");
+        my @history_uci;
+        for my $san (@{$o->{rootSan}}) {
+            my $query_play = @history_uci ? join(",", @history_uci) : "";
+            my $r = explorer($source, play => $query_play, moves => 12, topGames => 0, recentGames => 0);
+            my ($m) = grep { $_->{san} eq $san } @{$r->{moves} // []};
+            die "root san '$san' not found in explorer[$source] moves for opening '$o->{name}'" unless $m;
+            push @history_uci, $m->{uci};
+        }
 
-    my $query_play = join(",", @history_uci);
-    my $r = explorer(play => $query_play, moves => 12, topGames => 0, recentGames => 0);
-    my @candidates = @{$r->{moves} // []};
-    splice(@candidates, $o->{lineCount}) if @candidates > $o->{lineCount};
+        my $query_play = join(",", @history_uci);
+        my $r = explorer($source, play => $query_play, moves => 12, topGames => 0, recentGames => 0);
+        my @candidates = @{$r->{moves} // []};
+        splice(@candidates, $o->{lineCount}) if @candidates > $o->{lineCount};
 
-    logmsg("  got " . scalar(@candidates) . " candidate line(s) for $o->{name}");
+        logmsg("  [source=$source] got " . scalar(@candidates) . " candidate line(s) for $o->{name}");
 
-    my @lines;
-    for my $c (@candidates) {
-        my $line_name  = $c->{san};
-        logmsg("  walking line '$line_name' for $o->{name}");
-        my @line_history = (@history_uci, $c->{uci});
-        my $rest = walk_line($o->{name}, \@line_history, scalar @{$o->{rootSan}} + 1);
-        my $root_plies = [ map { { san => $_, uci => "", annotation => undef, alternativeSans => [] } } @{$o->{rootSan}} ];
-        my $candidate_ply = { san => $c->{san}, uci => $c->{uci}, annotation => undef, alternativeSans => [] };
-        my $total_plies = scalar(@$root_plies) + 1 + scalar(@$rest);
-        logmsg("  line '$line_name' total plies=$total_plies");
-        push @lines, {
-            name => $line_name,
-            plies => [@$root_plies, $candidate_ply, @$rest],
-            tags => [],
-        };
-    }
-
-    for my $l (@lines) {
-        for my $i (0 .. $#{$o->{rootSan}}) {
-            $l->{plies}[$i]{uci} = $history_uci[$i];
+        for my $c (@candidates) {
+            my $line_name  = $c->{san};
+            logmsg("  [source=$source] walking line '$line_name' for $o->{name}");
+            my @line_history = (@history_uci, $c->{uci});
+            my $rest = walk_line($source, $o->{name}, \@line_history, scalar @{$o->{rootSan}} + 1);
+            my $root_plies = [ map { { san => $_, uci => "", annotation => undef, alternativeSans => [] } } @{$o->{rootSan}} ];
+            for my $i (0 .. $#{$o->{rootSan}}) {
+                $root_plies->[$i]{uci} = $history_uci[$i];
+            }
+            my $candidate_ply = { san => $c->{san}, uci => $c->{uci}, annotation => undef, alternativeSans => [] };
+            my $total_plies = scalar(@$root_plies) + 1 + scalar(@$rest);
+            logmsg("  [source=$source] line '$line_name' total plies=$total_plies");
+            push @all_lines, {
+                name   => $line_name,
+                plies  => [@$root_plies, $candidate_ply, @$rest],
+                tags   => [],
+                source => $source,
+            };
         }
     }
 
@@ -168,7 +191,7 @@ sub build_opening {
         rootFen     => "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
         description => undef,
         isSeed      => \1,
-        lines       => \@lines,
+        lines       => \@all_lines,
     };
 }
 
@@ -179,7 +202,7 @@ my @openings = map {
     logmsg("[$idx/$total_openings] building $_->{name}");
     build_opening($_);
 } @{$cat->{openings}};
-my $out = { version => 1, openings => \@openings };
+my $out = { version => 2, openings => \@openings };
 
 open my $oh, ">", $OUT_PATH or die "write $OUT_PATH: $!";
 print $oh JSON::XS->new->canonical->pretty->encode($out);
