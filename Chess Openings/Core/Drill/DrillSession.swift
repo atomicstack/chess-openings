@@ -26,6 +26,17 @@ final class DrillSession {
     /// a `byUser` flag so they can classify the event in context.
     var onMoveApplied: ((Move, Position, Position, Bool) -> Void)?
 
+    /// Fires the instant `status` transitions to `.lineComplete`.
+    /// Consumers use this to trigger one-shot end-of-line effects
+    /// (victory sound, celebration animation) that shouldn't be
+    /// re-fired by later observable updates.
+    var onLineComplete: (() -> Void)?
+
+    /// Fires when the user submits a move that isn't in the book.
+    /// Independent of the resulting `DrillStatus` — both strict and
+    /// show-and-retry modes fire this.
+    var onIncorrectMove: (() -> Void)?
+
     private(set) var position: Position
     private(set) var history: [Move]
     private(set) var preMovePositions: [Position]
@@ -37,6 +48,24 @@ final class DrillSession {
     private(set) var status: DrillStatus
     private(set) var correctStreak: Int
     private(set) var completedWithoutMistake: Bool
+
+    /// Wall-clock instant the user submitted the first move of the
+    /// current attempt. Set lazily inside `submit(_:)` so scripted
+    /// autoplay on appear doesn't start the clock. Cleared on `reset()`.
+    private(set) var lineStartedAt: Date?
+    /// Wall-clock instant the session transitioned to `.lineComplete`.
+    /// Paired with `lineStartedAt` to compute per-ply pacing.
+    private(set) var lineCompletedAt: Date?
+
+    /// Average seconds-per-ply for the just-completed line, or `nil`
+    /// if the line isn't complete or the clock wasn't started (e.g. an
+    /// all-autoplay line). Divides by total plies in the line, not just
+    /// user plies, so black-side drills are judged on the same scale.
+    var averageSecondsPerPly: Double? {
+        guard let start = lineStartedAt, let end = lineCompletedAt,
+              !line.plies.isEmpty else { return nil }
+        return end.timeIntervalSince(start) / Double(line.plies.count)
+    }
 
     /// Position immediately before the most recent applied move, or `nil`
     /// if no move has been applied yet. Exposed so downstream consumers
@@ -72,6 +101,8 @@ final class DrillSession {
         self.status = .waitingForUser
         self.correctStreak = initialStreak
         self.completedWithoutMistake = true
+        self.lineStartedAt = nil
+        self.lineCompletedAt = nil
     }
 
     func submit(_ move: Move) async {
@@ -79,11 +110,16 @@ final class DrillSession {
         if case .mistake = status { status = .waitingForUser }
         status = .evaluating
 
+        // start the clock on the first user submission — scripted autoplay
+        // before this point doesn't count against the user's pace.
+        if lineStartedAt == nil { lineStartedAt = Date() }
+
         let candidates = await oracle.acceptableMoves(at: position, history: history)
         guard let match = candidates.first(where: { Self.sameChessMove($0.move, move) }) else {
             // off-book
             completedWithoutMistake = false
             correctStreak = 0
+            onIncorrectMove?()
             switch mode {
             case .strict:
                 // ui snaps piece back; no state change
@@ -114,8 +150,7 @@ final class DrillSession {
         }
 
         if history.count >= line.plies.count {
-            status = .lineComplete
-            if completedWithoutMistake { correctStreak += 1 }
+            finishLine()
         } else {
             status = .waitingForUser
         }
@@ -161,11 +196,21 @@ final class DrillSession {
         guard let move = SANParser.parse(move: ply.san, in: position) else { return }
         recordApply(move, byUser: false)
         if history.count >= line.plies.count {
-            status = .lineComplete
-            if completedWithoutMistake { correctStreak += 1 }
+            finishLine()
         } else {
             status = .waitingForUser
         }
+    }
+
+    /// Shared transition into `.lineComplete`. Stamps `lineCompletedAt`,
+    /// bumps the streak on a clean run, fires the one-shot callback, and
+    /// sets the status. Callers must have already applied the final move
+    /// before invoking.
+    private func finishLine() {
+        lineCompletedAt = Date()
+        status = .lineComplete
+        if completedWithoutMistake { correctStreak += 1 }
+        onLineComplete?()
     }
 
     /// Step back to the position the user was last prompted from. Pops
@@ -193,6 +238,8 @@ final class DrillSession {
         position = board.position
         status = .waitingForUser
         completedWithoutMistake = true
+        lineStartedAt = nil
+        lineCompletedAt = nil
     }
 
     /// chesskit's `Board` does not support undo, so we rebuild it

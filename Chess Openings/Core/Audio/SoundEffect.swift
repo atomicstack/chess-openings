@@ -7,6 +7,10 @@ enum SoundEffect: String, Sendable, CaseIterable {
     case moveSelf, moveOpponent, capture, castle, promote, moveCheck
     case illegal, incorrect, correct, puzzleCorrect, achievement
     case gameStart, gameEnd, click
+    /// Played when the user completes a full drill line.
+    case lineVictory
+    /// Played when the user attempts an off-book move in a drill.
+    case wrongMove
 
     /// Basename (without extension) of the mp3 inside the app bundle.
     var fileName: String {
@@ -25,6 +29,8 @@ enum SoundEffect: String, Sendable, CaseIterable {
         case .gameStart:      return "game-start"
         case .gameEnd:        return "game-end"
         case .click:          return "click"
+        case .lineVictory:    return "result-good-2-15"
+        case .wrongMove:      return "incorrect-2-15"
         }
     }
 

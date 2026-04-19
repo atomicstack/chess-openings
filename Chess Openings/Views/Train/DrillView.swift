@@ -78,14 +78,53 @@ struct DrillView: View {
 
     // MARK: - subviews
 
+    @ViewBuilder
     private func promptRow(for s: DrillSession) -> some View {
         HStack {
-            Text(promptText(for: s))
-                .font(.callout)
-                .foregroundStyle(promptColor(for: s))
+            if case .lineComplete = s.status {
+                completeBanner(for: s)
+            } else {
+                Text(promptText(for: s))
+                    .font(.callout)
+                    .foregroundStyle(promptColor(for: s))
+            }
             Spacer()
         }
         .padding(.horizontal)
+    }
+
+    /// End-of-line banner. Text is "perfect" for a clean run, otherwise
+    /// "line complete". A bouncing green checkmark always trails; if the
+    /// run also averaged under 1 second per ply, a "speedy" tag with a
+    /// bouncing yellow bolt is appended.
+    @ViewBuilder
+    private func completeBanner(for s: DrillSession) -> some View {
+        HStack(spacing: 6) {
+            Text(s.completedWithoutMistake ? "perfect" : "line complete")
+                .font(.callout)
+                .foregroundStyle(.green)
+            Image(systemName: "checkmark")
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(.green)
+                .symbolEffect(.bounce, options: .repeat(.continuous))
+            if isSpeedy(s) {
+                Text("speedy")
+                    .font(.callout)
+                    .foregroundStyle(.yellow)
+                Image(systemName: "bolt.fill")
+                    .symbolRenderingMode(.monochrome)
+                    .foregroundStyle(.yellow)
+                    .symbolEffect(.bounce, options: .repeat(.continuous))
+            }
+        }
+    }
+
+    /// True when the user averaged under a second per ply on this run.
+    /// Returns false if the session never started the clock (e.g. an
+    /// all-autoplay line), so the speedy tag only rewards actual play.
+    private func isSpeedy(_ s: DrillSession) -> Bool {
+        guard let avg = s.averageSecondsPerPly else { return false }
+        return avg < 1.0
     }
 
     private func moveListRow(for s: DrillSession) -> some View {
@@ -181,6 +220,8 @@ struct DrillView: View {
             let sfx = SoundEffect.forMove(move, pre: pre, post: post, byUser: byUser)
             player.play(sfx)
         }
+        s.onLineComplete = { player.play(.lineVictory) }
+        s.onIncorrectMove = { player.play(.wrongMove) }
         audio = player
         session = s
         if opening.side == .black {

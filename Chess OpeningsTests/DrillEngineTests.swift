@@ -322,6 +322,128 @@ final class DrillEngineTests: XCTestCase {
         XCTAssertEqual(DrillProgress.userMoves(historyCount: 0, totalPlies: 4, side: .black).total, 2)
     }
 
+    @MainActor
+    func test_drillsession_fires_onLineComplete_when_user_finishes_line() async throws {
+        let line = makeTestLine(["e4", "e5"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        var fired = 0
+        session.onLineComplete = { fired += 1 }
+
+        let e4 = try SanCodec.parse("e4", in: Position.standard)
+        await session.submit(e4)
+
+        XCTAssertEqual(session.status, .lineComplete)
+        XCTAssertEqual(fired, 1)
+    }
+
+    @MainActor
+    func test_drillsession_fires_onLineComplete_on_terminal_autoplay() async throws {
+        // single-ply line finishes on the very first autoplay call.
+        let line = makeTestLine(["e4"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        var fired = 0
+        session.onLineComplete = { fired += 1 }
+
+        session.autoplayNextBookPly()
+
+        XCTAssertEqual(session.status, .lineComplete)
+        XCTAssertEqual(fired, 1)
+    }
+
+    @MainActor
+    func test_drillsession_fires_onIncorrectMove_for_offbook_strict() async throws {
+        let line = makeTestLine(["e4", "e5"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        var fired = 0
+        session.onIncorrectMove = { fired += 1 }
+
+        let d4 = try SanCodec.parse("d4", in: Position.standard)
+        await session.submit(d4)
+
+        XCTAssertEqual(fired, 1)
+    }
+
+    @MainActor
+    func test_drillsession_fires_onIncorrectMove_for_offbook_showAndRetry() async throws {
+        let line = makeTestLine(["e4", "e5"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .showAndRetry,
+            masteryThreshold: 3
+        )
+        var fired = 0
+        session.onIncorrectMove = { fired += 1 }
+
+        let d4 = try SanCodec.parse("d4", in: Position.standard)
+        await session.submit(d4)
+
+        XCTAssertEqual(fired, 1)
+    }
+
+    @MainActor
+    func test_drillsession_tracks_line_timing_for_speedy_check() async throws {
+        let line = makeTestLine(["e4", "e5"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        XCTAssertNil(session.lineStartedAt)
+        XCTAssertNil(session.lineCompletedAt)
+        XCTAssertNil(session.averageSecondsPerPly)
+
+        let e4 = try SanCodec.parse("e4", in: Position.standard)
+        await session.submit(e4)
+
+        XCTAssertNotNil(session.lineStartedAt)
+        XCTAssertNotNil(session.lineCompletedAt)
+        if let avg = session.averageSecondsPerPly {
+            // 2-ply test line submitted instantly should beat 1s/ply.
+            XCTAssertLessThan(avg, 1.0)
+            XCTAssertGreaterThanOrEqual(avg, 0.0)
+        } else {
+            XCTFail("averageSecondsPerPly should be non-nil after completion")
+        }
+    }
+
+    @MainActor
+    func test_drillsession_reset_clears_timing() async throws {
+        let line = makeTestLine(["e4", "e5"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        let e4 = try SanCodec.parse("e4", in: Position.standard)
+        await session.submit(e4)
+        XCTAssertNotNil(session.lineStartedAt)
+        XCTAssertNotNil(session.lineCompletedAt)
+
+        session.reset()
+
+        XCTAssertNil(session.lineStartedAt)
+        XCTAssertNil(session.lineCompletedAt)
+        XCTAssertNil(session.averageSecondsPerPly)
+    }
+
     // helper
     func makeTestLine(_ sans: [String]) -> LineSnapshot {
         let plies = sans.map { san -> BookPly in

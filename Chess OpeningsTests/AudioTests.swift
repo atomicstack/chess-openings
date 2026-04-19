@@ -21,6 +21,16 @@ final class AudioTests: XCTestCase {
         XCTAssertEqual(SoundEffect.gameStart.fileName, "game-start")
         XCTAssertEqual(SoundEffect.gameEnd.fileName, "game-end")
         XCTAssertEqual(SoundEffect.click.fileName, "click")
+        XCTAssertEqual(SoundEffect.lineVictory.fileName, "result-good-2-15")
+        XCTAssertEqual(SoundEffect.wrongMove.fileName, "incorrect-2-15")
+    }
+
+    /// Guard against the build forgetting to copy the new mp3s into the
+    /// bundle. `SoundEffect.fileName` is just a string — without this
+    /// check a typo or missing resource would only surface at runtime.
+    func test_new_sound_effects_are_in_bundle() {
+        XCTAssertNotNil(Bundle.main.url(forResource: "result-good-2-15", withExtension: "mp3"))
+        XCTAssertNotNil(Bundle.main.url(forResource: "incorrect-2-15", withExtension: "mp3"))
     }
 
     // MARK: - forMove resolver
