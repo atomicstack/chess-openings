@@ -36,9 +36,19 @@ struct DrillView: View {
             }
             Spacer(minLength: 0)
         }
-        .navigationTitle("\(opening.name) — \(line.name)")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 1) {
+                    Text(opening.name)
+                        .font(.caption)
+                        .multilineTextAlignment(.center)
+                    Text(line.name)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showSettingsSheet = true } label: {
                     Image(systemName: "gearshape")
