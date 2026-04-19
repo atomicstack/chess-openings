@@ -8,9 +8,18 @@ struct OpeningDetailView: View {
             if let d = opening.openingDescription, !d.isEmpty {
                 Section { Text(d).font(.callout) }
             }
-            Section("lines") {
-                ForEach(opening.lines) { line in
-                    NavigationLink { DrillView(opening: opening, line: line) } label: { row(for: line) }
+            if !mastersLines.isEmpty {
+                Section("master games") {
+                    ForEach(mastersLines) { line in
+                        NavigationLink { DrillView(opening: opening, line: line) } label: { row(for: line) }
+                    }
+                }
+            }
+            if !openLines.isEmpty {
+                Section("online play (2200+)") {
+                    ForEach(openLines) { line in
+                        NavigationLink { DrillView(opening: opening, line: line) } label: { row(for: line) }
+                    }
                 }
             }
         }
@@ -29,6 +38,9 @@ struct OpeningDetailView: View {
             }
         }
     }
+
+    private var mastersLines: [Line] { opening.lines.filter { $0.source == .masters } }
+    private var openLines:    [Line] { opening.lines.filter { $0.source == .open    } }
 
     private func row(for line: Line) -> some View {
         let preview = line.plies.prefix(6).map { $0.san }.joined(separator: " ")
