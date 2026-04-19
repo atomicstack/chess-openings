@@ -29,6 +29,11 @@ final class DrillSession {
     private(set) var position: Position
     private(set) var history: [Move]
     private(set) var preMovePositions: [Position]
+    /// Parallel to `history`: `true` for moves the user submitted, `false`
+    /// for scripted replies and black-side autoplay. `undo` uses this to
+    /// step back to the last position the user was prompted from, never
+    /// past an autoplay-only state.
+    private(set) var historyByUser: [Bool]
     private(set) var status: DrillStatus
     private(set) var correctStreak: Int
     private(set) var completedWithoutMistake: Bool
@@ -63,6 +68,7 @@ final class DrillSession {
         self.position = .standard
         self.history = []
         self.preMovePositions = []
+        self.historyByUser = []
         self.status = .waitingForUser
         self.correctStreak = initialStreak
         self.completedWithoutMistake = true
@@ -93,9 +99,7 @@ final class DrillSession {
         }
 
         // match — apply user move via Board
-        preMovePositions.append(position)
-        apply(match.move, byUser: true)
-        history.append(match.move)
+        recordApply(match.move, byUser: true)
 
         // apply scripted reply if there is one, after a brief pause so
         // the user's piece animation can finish before the reply starts
@@ -105,9 +109,7 @@ final class DrillSession {
                 if scriptedReplyDelayMs > 0 {
                     try? await Task.sleep(for: .milliseconds(scriptedReplyDelayMs))
                 }
-                preMovePositions.append(position)
-                apply(replyMove, byUser: false)
-                history.append(replyMove)
+                recordApply(replyMove, byUser: false)
             }
         }
 
@@ -124,6 +126,16 @@ final class DrillSession {
         board.move(pieceAt: move.start, to: move.end)
         position = board.position
         onMoveApplied?(move, pre, position, byUser)
+    }
+
+    /// Apply a move and record it in `history`/`preMovePositions`/`historyByUser`
+    /// so the three arrays stay the same length. Callers must not append to
+    /// `history` directly — go through this helper.
+    private func recordApply(_ move: Move, byUser: Bool) {
+        preMovePositions.append(position)
+        apply(move, byUser: byUser)
+        history.append(move)
+        historyByUser.append(byUser)
     }
 
     /// Same-chess-move identity: compares only the essential fields that
@@ -147,9 +159,7 @@ final class DrillSession {
         guard history.count < line.plies.count else { return }
         let ply = line.plies[history.count]
         guard let move = SANParser.parse(move: ply.san, in: position) else { return }
-        preMovePositions.append(position)
-        apply(move, byUser: false)
-        history.append(move)
+        recordApply(move, byUser: false)
         if history.count >= line.plies.count {
             status = .lineComplete
             if completedWithoutMistake { correctStreak += 1 }
@@ -158,15 +168,18 @@ final class DrillSession {
         }
     }
 
-    /// Step back one full move (user move + scripted reply) so the user
-    /// can retry the same prompt. If the history contains only a single
-    /// ply (i.e. the scripted reply didn't happen), that ply is removed.
+    /// Step back to the position the user was last prompted from. Pops
+    /// the most recent user move and the scripted reply that followed it
+    /// (if any). No-op when the only moves on the board are non-user
+    /// (e.g. the black-side autoplay fired but the user hasn't moved yet)
+    /// — popping past that state would silently flip which side the user
+    /// controls.
     func undo() {
-        guard !history.isEmpty else { return }
-        let stepsBack = min(2, history.count)
-        history.removeLast(stepsBack)
-        let preCount = min(stepsBack, preMovePositions.count)
-        preMovePositions.removeLast(preCount)
+        guard let lastUserIdx = historyByUser.lastIndex(of: true) else { return }
+        let popCount = history.count - lastUserIdx
+        history.removeLast(popCount)
+        preMovePositions.removeLast(min(popCount, preMovePositions.count))
+        historyByUser.removeLast(popCount)
         rebuildBoardFromHistory()
         status = .waitingForUser
     }
@@ -175,6 +188,7 @@ final class DrillSession {
     func reset() {
         history = []
         preMovePositions = []
+        historyByUser = []
         board = Board(position: .standard)
         position = board.position
         status = .waitingForUser

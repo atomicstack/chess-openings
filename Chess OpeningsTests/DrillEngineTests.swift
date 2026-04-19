@@ -110,6 +110,29 @@ final class DrillEngineTests: XCTestCase {
     }
 
     @MainActor
+    func test_drillsession_undo_is_noop_before_any_user_move() async throws {
+        // black-side style setup: first ply is auto-played (byUser=false),
+        // user hasn't moved yet. undo in this state used to empty the
+        // history and silently flip which side the user was controlling.
+        let line = makeTestLine(["e4", "e5", "Nf3", "Nc6"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        session.autoplayNextBookPly()
+        XCTAssertEqual(session.history.count, 1)
+
+        session.undo()
+
+        XCTAssertEqual(session.history.count, 1,
+                       "undo must not pop the autoplay move when the user hasn't played yet")
+        XCTAssertEqual(session.preMovePositions.count, 1)
+        XCTAssertEqual(session.status, .waitingForUser)
+    }
+
+    @MainActor
     func test_drillsession_undo_steps_back_one_full_move() async throws {
         let line = makeTestLine(["e4", "e5", "Nf3", "Nc6"])
         let session = DrillSession(
