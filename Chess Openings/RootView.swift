@@ -28,7 +28,7 @@ struct RootView: View {
         }
         .task {
             do {
-                try SeedLoader().seedIfEmpty(context: modelContext)
+                try SeedLoader().seedIfNeeded(context: modelContext)
             } catch {
                 status.seedError = error
             }
