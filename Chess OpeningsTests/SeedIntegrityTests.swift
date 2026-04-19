@@ -10,14 +10,19 @@ final class SeedIntegrityTests: XCTestCase {
         let data = try Data(contentsOf: url)
         let dto = try JSONDecoder().decode(SeedDTO.self, from: data)
 
+        XCTAssertGreaterThanOrEqual(dto.version, 2, "seed version should be >=2 after dual-source migration")
         XCTAssertEqual(dto.openings.count, 16)
+
         for opening in dto.openings {
-            XCTAssert(opening.lines.count >= 4 && opening.lines.count <= 5,
-                      "\(opening.name) has \(opening.lines.count) lines")
+            let masters = opening.lines.filter { $0.source == .masters }
+            let open    = opening.lines.filter { $0.source == .open }
+            XCTAssertFalse(masters.isEmpty, "\(opening.name) missing masters lines")
+            XCTAssertFalse(open.isEmpty,    "\(opening.name) missing open lines")
+            XCTAssertTrue(opening.lines.count >= 8 && opening.lines.count <= 10,
+                          "\(opening.name) has \(opening.lines.count) lines, expected 8-10")
             for line in opening.lines {
-                XCTAssert(line.plies.count <= 20,
-                          "\(opening.name)/\(line.name) has \(line.plies.count) plies")
-                // replay each ply
+                XCTAssertTrue(line.plies.count <= 20,
+                              "\(opening.name)/\(line.name) has \(line.plies.count) plies")
                 var pos = Position.standard
                 for (i, ply) in line.plies.enumerated() {
                     guard let m = SANParser.parse(move: ply.san, in: pos) else {
