@@ -397,7 +397,24 @@ final class DrillEngineTests: XCTestCase {
     }
 
     @MainActor
-    func test_drillsession_tracks_line_timing_for_speedy_check() async throws {
+    func test_drillsession_averageSecondsPerPly_is_nil_until_line_complete() async throws {
+        let line = makeTestLine(["e4", "e5", "Nf3", "Nc6"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        XCTAssertNil(session.averageSecondsPerPly)
+
+        let e4 = try SanCodec.parse("e4", in: Position.standard)
+        await session.submit(e4)
+        // line not yet complete — still nil
+        XCTAssertNil(session.averageSecondsPerPly)
+    }
+
+    @MainActor
+    func test_drillsession_averageSecondsPerPly_set_after_completion() async throws {
         let line = makeTestLine(["e4", "e5"])
         let session = DrillSession(
             line: line,
@@ -405,22 +422,42 @@ final class DrillEngineTests: XCTestCase {
             mode: .strict,
             masteryThreshold: 3
         )
-        XCTAssertNil(session.lineStartedAt)
-        XCTAssertNil(session.lineCompletedAt)
-        XCTAssertNil(session.averageSecondsPerPly)
-
         let e4 = try SanCodec.parse("e4", in: Position.standard)
         await session.submit(e4)
 
-        XCTAssertNotNil(session.lineStartedAt)
-        XCTAssertNotNil(session.lineCompletedAt)
-        if let avg = session.averageSecondsPerPly {
-            // 2-ply test line submitted instantly should beat 1s/ply.
-            XCTAssertLessThan(avg, 1.0)
-            XCTAssertGreaterThanOrEqual(avg, 0.0)
-        } else {
-            XCTFail("averageSecondsPerPly should be non-nil after completion")
+        guard let avg = session.averageSecondsPerPly else {
+            return XCTFail("averageSecondsPerPly should be non-nil after completion")
         }
+        // 2-ply line, instant submit — avg comfortably under 1s/ply.
+        XCTAssertLessThan(avg, 1.0)
+        XCTAssertGreaterThanOrEqual(avg, 0.0)
+    }
+
+    @MainActor
+    func test_drillsession_timing_excludes_scripted_reply_delay() async throws {
+        // simulate a slow UI reply delay (200ms). that 200ms is spent by
+        // the computer between the user's move and the reply being applied,
+        // so it must NOT be counted against the user's thinking time.
+        let line = makeTestLine(["e4", "e5"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        session.scriptedReplyDelayMs = 200
+
+        let e4 = try SanCodec.parse("e4", in: Position.standard)
+        let wallStart = Date()
+        await session.submit(e4)
+        let wallElapsed = Date().timeIntervalSince(wallStart)
+
+        // sanity: submit actually took at least the reply delay.
+        XCTAssertGreaterThanOrEqual(wallElapsed, 0.2, "submit should have slept for the reply delay")
+        // user thinking time must be strictly less than wall-clock elapsed,
+        // and specifically less than the reply delay itself (since the
+        // submit was otherwise instant).
+        XCTAssertLessThan(session.userThinkingTime, 0.2)
     }
 
     @MainActor
@@ -434,13 +471,11 @@ final class DrillEngineTests: XCTestCase {
         )
         let e4 = try SanCodec.parse("e4", in: Position.standard)
         await session.submit(e4)
-        XCTAssertNotNil(session.lineStartedAt)
-        XCTAssertNotNil(session.lineCompletedAt)
+        XCTAssertNotNil(session.averageSecondsPerPly)
 
         session.reset()
 
-        XCTAssertNil(session.lineStartedAt)
-        XCTAssertNil(session.lineCompletedAt)
+        XCTAssertEqual(session.userThinkingTime, 0)
         XCTAssertNil(session.averageSecondsPerPly)
     }
 

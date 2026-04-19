@@ -49,22 +49,25 @@ final class DrillSession {
     private(set) var correctStreak: Int
     private(set) var completedWithoutMistake: Bool
 
-    /// Wall-clock instant the user submitted the first move of the
-    /// current attempt. Set lazily inside `submit(_:)` so scripted
-    /// autoplay on appear doesn't start the clock. Cleared on `reset()`.
-    private(set) var lineStartedAt: Date?
-    /// Wall-clock instant the session transitioned to `.lineComplete`.
-    /// Paired with `lineStartedAt` to compute per-ply pacing.
-    private(set) var lineCompletedAt: Date?
+    /// Total seconds the user has been actively on the clock for this
+    /// line — summed over every wall-clock interval where the board was
+    /// waiting on the user (status `.waitingForUser` or `.mistake`).
+    /// Scripted reply delays and black-side autoplay time are excluded.
+    private(set) var userThinkingTime: TimeInterval = 0
+
+    /// Wall-clock instant the current "it's your turn" interval began,
+    /// or `nil` while the session is mid-computer-action (scripted
+    /// reply in flight, line complete). The next `submit(_:)` accumulates
+    /// `now - lastPromptAt` into `userThinkingTime` before clearing it.
+    private var lastPromptAt: Date?
 
     /// Average seconds-per-ply for the just-completed line, or `nil`
-    /// if the line isn't complete or the clock wasn't started (e.g. an
-    /// all-autoplay line). Divides by total plies in the line, not just
-    /// user plies, so black-side drills are judged on the same scale.
+    /// if the line isn't complete. Uses `userThinkingTime` (computer
+    /// time excluded) divided by total plies in the line, so black-side
+    /// drills are judged on the same scale as white-side drills.
     var averageSecondsPerPly: Double? {
-        guard let start = lineStartedAt, let end = lineCompletedAt,
-              !line.plies.isEmpty else { return nil }
-        return end.timeIntervalSince(start) / Double(line.plies.count)
+        guard case .lineComplete = status, !line.plies.isEmpty else { return nil }
+        return userThinkingTime / Double(line.plies.count)
     }
 
     /// Position immediately before the most recent applied move, or `nil`
@@ -101,18 +104,20 @@ final class DrillSession {
         self.status = .waitingForUser
         self.correctStreak = initialStreak
         self.completedWithoutMistake = true
-        self.lineStartedAt = nil
-        self.lineCompletedAt = nil
+        // user is on the clock the moment the session shows the board.
+        // for black-side drills, autoplayNextBookPly re-stamps (discarding
+        // this pre-autoplay interval) so only real user time accumulates.
+        self.lastPromptAt = Date()
     }
 
     func submit(_ move: Move) async {
+        // close the current "your turn" interval — the user just acted.
+        // clear the stamp so the scripted-reply sleep below isn't counted.
+        accumulateUserThinking()
+
         // allow recovery from a prior mistake (show-and-retry)
         if case .mistake = status { status = .waitingForUser }
         status = .evaluating
-
-        // start the clock on the first user submission — scripted autoplay
-        // before this point doesn't count against the user's pace.
-        if lineStartedAt == nil { lineStartedAt = Date() }
 
         let candidates = await oracle.acceptableMoves(at: position, history: history)
         guard let match = candidates.first(where: { Self.sameChessMove($0.move, move) }) else {
@@ -131,6 +136,8 @@ final class DrillSession {
                     status = .waitingForUser
                 }
             }
+            // user stays on the clock for the retry
+            lastPromptAt = Date()
             return
         }
 
@@ -153,7 +160,18 @@ final class DrillSession {
             finishLine()
         } else {
             status = .waitingForUser
+            lastPromptAt = Date()
         }
+    }
+
+    /// Add the elapsed time since `lastPromptAt` to `userThinkingTime`
+    /// and clear the stamp. No-op if the stamp isn't set (e.g. the
+    /// session is mid-scripted-action). Call before the "it's your turn"
+    /// interval closes.
+    private func accumulateUserThinking() {
+        guard let stamp = lastPromptAt else { return }
+        userThinkingTime += Date().timeIntervalSince(stamp)
+        lastPromptAt = nil
     }
 
     private func apply(_ move: Move, byUser: Bool) {
@@ -199,15 +217,19 @@ final class DrillSession {
             finishLine()
         } else {
             status = .waitingForUser
+            // the user is now on the clock; discard any pre-autoplay
+            // interval (e.g. the 750ms wait the UI uses before firing
+            // black-side autoplay) by re-stamping rather than accumulating.
+            lastPromptAt = Date()
         }
     }
 
-    /// Shared transition into `.lineComplete`. Stamps `lineCompletedAt`,
-    /// bumps the streak on a clean run, fires the one-shot callback, and
-    /// sets the status. Callers must have already applied the final move
-    /// before invoking.
+    /// Shared transition into `.lineComplete`. Stops the user-thinking
+    /// clock, bumps the streak on a clean run, fires the one-shot
+    /// callback, and sets the status. Callers must have already applied
+    /// the final move before invoking.
     private func finishLine() {
-        lineCompletedAt = Date()
+        lastPromptAt = nil
         status = .lineComplete
         if completedWithoutMistake { correctStreak += 1 }
         onLineComplete?()
@@ -227,6 +249,7 @@ final class DrillSession {
         historyByUser.removeLast(popCount)
         rebuildBoardFromHistory()
         status = .waitingForUser
+        lastPromptAt = Date()
     }
 
     /// Return to the initial position and clear all drill state.
@@ -238,8 +261,8 @@ final class DrillSession {
         position = board.position
         status = .waitingForUser
         completedWithoutMistake = true
-        lineStartedAt = nil
-        lineCompletedAt = nil
+        userThinkingTime = 0
+        lastPromptAt = Date()
     }
 
     /// chesskit's `Board` does not support undo, so we rebuild it
