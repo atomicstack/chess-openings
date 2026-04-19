@@ -88,6 +88,7 @@ sub explorer {
     $req_count++;
     my $cfg = $SOURCES{$source} or die "unknown source '$source'";
     my %merged = (%q, %{ $cfg->{extra_params} });
+    # masters uses empty prefix to preserve pre-dual-source cache entries; do not change.
     my $prefix = $source eq "masters" ? "" : "$source|";
     my $key  = md5_hex($prefix . join("|", map { "$_=$merged{$_}" } sort keys %merged));
     my $file = "$CACHE_DIR/$key.json";
@@ -104,8 +105,22 @@ sub explorer {
     sleep(1);
     my %opts;
     $opts{headers} = { Authorization => $AUTH_HEADER } if $AUTH_HEADER;
-    my $res = $http->get($url, \%opts);
-    die "explorer $url: $res->{status} $res->{reason}" unless $res->{success};
+    my $res;
+    my $attempt = 0;
+    while (1) {
+        $res = $http->get($url, \%opts);
+        last if $res->{success};
+        my $retryable = $res->{status} == 429
+                      || ($res->{status} >= 500 && $res->{status} <= 599);
+        if ($retryable && $attempt < 5) {
+            my $wait = 2 ** $attempt;
+            logmsg("  explorer[$source] #$req_count got $res->{status} $res->{reason}, retrying in ${wait}s (attempt " . ($attempt + 1) . "/5)");
+            sleep($wait);
+            $attempt++;
+            next;
+        }
+        die "explorer $url: $res->{status} $res->{reason}";
+    }
     open my $fh, ">", $file; print $fh $res->{content}; close $fh;
     decode_json($res->{content});
 }
@@ -204,9 +219,11 @@ my @openings = map {
 } @{$cat->{openings}};
 my $out = { version => 2, openings => \@openings };
 
-open my $oh, ">", $OUT_PATH or die "write $OUT_PATH: $!";
+my $tmp_path = "$OUT_PATH.tmp";
+open my $oh, ">", $tmp_path or die "write $tmp_path: $!";
 print $oh JSON::XS->new->canonical->pretty->encode($out);
 close $oh;
+rename $tmp_path, $OUT_PATH or die "rename $tmp_path -> $OUT_PATH: $!";
 
 logmsg("wrote $OUT_PATH with " . scalar(@openings) . " openings");
 logmsg("explorer requests total=$req_count cache_hits=$cache_hits cache_miss=$cache_miss");
