@@ -10,7 +10,7 @@ final class SeedLoaderVersionTests: XCTestCase {
         try SeedLoader().seedIfNeeded(context: ctx, bundle: bundle)
         let settings = try ctx.fetch(FetchDescriptor<UserSettings>()).first
         XCTAssertNotNil(settings)
-        XCTAssertEqual(settings?.seededVersion, currentBundledVersion(bundle: bundle))
+        XCTAssertEqual(settings?.seededVersion, currentBundledVersion())
         let count = try ctx.fetchCount(FetchDescriptor<Opening>())
         XCTAssertEqual(count, 16)
     }
@@ -49,6 +49,35 @@ final class SeedLoaderVersionTests: XCTestCase {
         XCTAssertFalse(seeded.contains { $0.name == "stale" })
     }
 
+    func test_reseed_wipes_line_progress_from_old_seed() throws {
+        let ctx = try makeContext()
+        let bundle = seedBundle()
+        try SeedLoader().seedIfNeeded(context: ctx, bundle: bundle)
+
+        // pick any seed line and mutate its progress to non-default
+        let lines = try ctx.fetch(FetchDescriptor<Line>())
+        guard let line = lines.first else { XCTFail("no seed lines"); return }
+        let progress = line.mastery ?? LineProgress()
+        progress.correctStreak = 7
+        line.mastery = progress
+        try ctx.save()
+
+        let progressCountBefore = try ctx.fetchCount(FetchDescriptor<LineProgress>())
+        XCTAssertGreaterThan(progressCountBefore, 0)
+
+        // simulate version bump by resetting the settings row
+        let settings = try ctx.fetch(FetchDescriptor<UserSettings>()).first!
+        settings.seededVersion = 0
+        try ctx.save()
+
+        try SeedLoader().seedIfNeeded(context: ctx, bundle: bundle)
+
+        // all progress rows should now be fresh (correctStreak == 0 for every row)
+        let progressAfter = try ctx.fetch(FetchDescriptor<LineProgress>())
+        XCTAssertFalse(progressAfter.contains { $0.correctStreak == 7 },
+                       "expected the mutated progress row to be cascaded away on reseed")
+    }
+
     private func seedBundle() -> Bundle {
         Bundle(for: Self.self).url(forResource: "openings", withExtension: "json") != nil
             ? Bundle(for: Self.self) : Bundle.main
@@ -59,9 +88,8 @@ final class SeedLoaderVersionTests: XCTestCase {
         let container = try ModelContainer(for: schema, configurations: [cfg])
         return ModelContext(container)
     }
-    private func currentBundledVersion(bundle: Bundle) -> Int {
-        let b = seedBundle()
-        let url = b.url(forResource: "openings", withExtension: "json")!
+    private func currentBundledVersion() -> Int {
+        let url = seedBundle().url(forResource: "openings", withExtension: "json")!
         let data = try! Data(contentsOf: url)
         return try! JSONDecoder().decode(SeedDTO.self, from: data).version
     }
