@@ -18,9 +18,16 @@ for my $o (@{$data->{openings}}) {
     fail("opening missing name") unless defined $o->{name};
     fail("$o->{name}: missing eco") unless defined $o->{eco};
     fail("$o->{name}: side must be white/black") unless $o->{side} =~ /^(white|black)$/;
-    fail("$o->{name}: expected 4-5 lines, got " . scalar @{$o->{lines}}) if @{$o->{lines}} < 4 || @{$o->{lines}} > 5;
+    fail("$o->{name}: expected 8-10 lines, got " . scalar @{$o->{lines}}) if @{$o->{lines}} < 8 || @{$o->{lines}} > 10;
+
+    my %by_source;
+    $by_source{$_->{source} // "missing"}++ for @{$o->{lines}};
+    fail("$o->{name}: expected >=1 masters line, got " . ($by_source{masters} // 0)) if ($by_source{masters} // 0) < 1;
+    fail("$o->{name}: expected >=1 open line, got " . ($by_source{open} // 0)) if ($by_source{open} // 0) < 1;
 
     for my $l (@{$o->{lines}}) {
+        fail("$o->{name}/$l->{name}: missing source") unless defined $l->{source};
+        fail("$o->{name}/$l->{name}: invalid source '$l->{source}'") unless $l->{source} =~ /^(masters|open)$/;
         fail("$o->{name}: empty plies") unless @{$l->{plies}};
         fail("$o->{name}/$l->{name}: >20 plies (" . scalar @{$l->{plies}} . ")") if @{$l->{plies}} > 20;
         for my $p (@{$l->{plies}}) {
