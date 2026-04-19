@@ -36,7 +36,8 @@ struct DrillView: View {
             }
             Spacer(minLength: 0)
         }
-        .navigationTitle(line.name)
+        .navigationTitle("\(opening.name) — \(line.name)")
+        .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showSettingsSheet = true } label: {
