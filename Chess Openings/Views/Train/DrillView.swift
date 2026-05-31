@@ -112,7 +112,6 @@ struct DrillView: View {
             } else {
                 ProgressView()
             }
-            Spacer(minLength: 0)
         }
         .overlay(alignment: .bottomTrailing) {
             BrainThinkingIndicator(
@@ -275,20 +274,23 @@ struct DrillView: View {
 
     private func moveListRow(for s: DrillSession) -> some View {
         HStack(alignment: .top, spacing: 8) {
-            FlowLayout(horizontalSpacing: 6, verticalSpacing: 4) {
-                ForEach(Array(s.history.enumerated()), id: \.offset) { i, move in
-                    let pre = i < s.preMovePositions.count ? s.preMovePositions[i] : Position.standard
-                    let san = SanCodec.format(move, in: pre)
-                    Text(sanLabel(ply: i, san: san))
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
+            ScrollView(.vertical, showsIndicators: false) {
+                FlowLayout(horizontalSpacing: 6, verticalSpacing: 4) {
+                    ForEach(Array(s.history.enumerated()), id: \.offset) { i, move in
+                        let pre = i < s.preMovePositions.count ? s.preMovePositions[i] : Position.standard
+                        let san = SanCodec.format(move, in: pre)
+                        Text(sanLabel(ply: i, san: san))
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             Text(progressLabel(for: s))
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
         }
+        .frame(maxHeight: .infinity, alignment: .top)
         .padding(.horizontal)
     }
 
@@ -304,20 +306,23 @@ struct DrillView: View {
         let combinedMoves = s.history + p.history
         let combinedPres = s.preMovePositions + p.preMovePositions
         return HStack(alignment: .top, spacing: 8) {
-            FlowLayout(horizontalSpacing: 6, verticalSpacing: 4) {
-                ForEach(Array(combinedMoves.enumerated()), id: \.offset) { i, move in
-                    let pre = i < combinedPres.count ? combinedPres[i] : Position.standard
-                    let san = SanCodec.format(move, in: pre)
-                    Text(sanLabel(ply: i, san: san))
-                        .font(.caption.monospaced())
-                        .foregroundStyle(i < drillCount ? .secondary : .primary)
+            ScrollView(.vertical, showsIndicators: false) {
+                FlowLayout(horizontalSpacing: 6, verticalSpacing: 4) {
+                    ForEach(Array(combinedMoves.enumerated()), id: \.offset) { i, move in
+                        let pre = i < combinedPres.count ? combinedPres[i] : Position.standard
+                        let san = SanCodec.format(move, in: pre)
+                        Text(sanLabel(ply: i, san: san))
+                            .font(.caption.monospaced())
+                            .foregroundStyle(i < drillCount ? .secondary : .primary)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             Text("move \(combinedMoves.count / 2 + 1)")
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
         }
+        .frame(maxHeight: .infinity, alignment: .top)
         .padding(.horizontal)
     }
 
