@@ -58,7 +58,9 @@ final class EnginePlayoutSession {
         await playEngineReply()
     }
 
-    fileprivate func playEngineReply() async {
+    private func playEngineReply() async {
+        // task 8 will call this from submit() while .waitingForUser; the
+        // assignment isn't redundant once that lands.
         status = .engineThinking
         let move = await engine.bestMove(
             at: position,
@@ -76,20 +78,24 @@ final class EnginePlayoutSession {
         status = .waitingForUser
     }
 
-    fileprivate func recordApply(_ move: Move, byUser: Bool) {
-        preMovePositions.append(position)
+    private func apply(_ move: Move, byUser: Bool) {
         let pre = position
         board.move(pieceAt: move.start, to: move.end)
         position = board.position
+        onMoveApplied?(move, pre, position, byUser)
+    }
+
+    private func recordApply(_ move: Move, byUser: Bool) {
+        preMovePositions.append(position)
+        apply(move, byUser: byUser)
         history.append(move)
         historyByUser.append(byUser)
-        onMoveApplied?(move, pre, position, byUser)
     }
 
     /// Bridge a UCI long-algebraic move ("e2e4") to a ChessKit `Move`
     /// legal in `position`. Promotion strings (5-char like "e7e8q")
     /// are rejected here and will be handled in task 8.
-    fileprivate func parseUCI(_ uci: String, in pos: Position) -> Move? {
+    private func parseUCI(_ uci: String, in pos: Position) -> Move? {
         guard uci.count == 4 else { return nil }
         let fromStr = String(uci.prefix(2))
         let toStr = String(uci.dropFirst(2).prefix(2))
