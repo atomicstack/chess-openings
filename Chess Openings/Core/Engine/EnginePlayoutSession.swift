@@ -150,4 +150,38 @@ final class EnginePlayoutSession {
         let rank = s.last!
         return ("a"..."h").contains(file) && ("1"..."8").contains(rank)
     }
+
+    /// Step back to the position the user was last prompted from.
+    /// Pops the most recent user move and the engine reply that
+    /// followed it (if any). No-ops when:
+    ///  - the game is over (don't let the user rewind a finished game)
+    ///  - the only moves are non-user (the engine-first bootstrap
+    ///    move; popping it would flip which side the user controls).
+    func undo() {
+        if case .gameOver = status { return }
+        guard let lastUserIdx = historyByUser.lastIndex(of: true) else {
+            return
+        }
+        // Capture the session's starting position before we mutate
+        // preMovePositions — if undo wipes history entirely, we still
+        // need the original snapshot to rebuild the board.
+        let start: Position = preMovePositions.first ?? position
+        let popCount = history.count - lastUserIdx
+        history.removeLast(popCount)
+        preMovePositions.removeLast(min(popCount, preMovePositions.count))
+        historyByUser.removeLast(popCount)
+        rebuildBoardFromHistory(from: start)
+        status = .waitingForUser
+    }
+
+    /// chesskit's `Board` doesn't support undo, so we rebuild it by
+    /// replaying `history` from the session's starting position.
+    private func rebuildBoardFromHistory(from start: Position) {
+        var replay = Board(position: start)
+        for move in history {
+            replay.move(pieceAt: move.start, to: move.end)
+        }
+        board = replay
+        position = board.position
+    }
 }
