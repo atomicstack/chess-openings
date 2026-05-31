@@ -1,7 +1,11 @@
 import SwiftUI
+import SwiftData
 
 struct OpeningDetailView: View {
     let opening: Opening
+
+    @Query private var settingsList: [UserSettings]
+    private var threshold: Int { settingsList.first?.masteryThreshold ?? 3 }
 
     var body: some View {
         List {
@@ -46,13 +50,19 @@ struct OpeningDetailView: View {
         let preview = line.plies.prefix(6).map { $0.san }.joined(separator: " ")
         let streak = line.mastery?.correctStreak ?? 0
         let learned = line.mastery?.isLearned ?? false
-        return VStack(alignment: .leading) {
+        return VStack(alignment: .leading, spacing: 4) {
             Text(line.name).font(.body)
             Text(preview).font(.caption).monospaced().foregroundStyle(.secondary).lineLimit(1)
             if learned {
                 Text("✓ learned").font(.caption2).foregroundStyle(.blue)
             } else {
-                Text("streak: \(streak)").font(.caption2).foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    ProgressBarView(current: streak, total: threshold)
+                        .frame(width: 60)
+                    Text("\(streak)/\(threshold)")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }

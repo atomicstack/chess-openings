@@ -16,6 +16,8 @@ struct DrillView: View {
     @State private var playout: EnginePlayoutSession?
     @State private var engineService: EngineService?
     @State private var playoutHint: EngineMove?
+    @State private var wasLearnedAtSessionStart: Bool = false
+    @State private var confettiTrigger: Date?
 
     private var settings: UserSettings? { settingsList.first }
 
@@ -68,6 +70,10 @@ struct DrillView: View {
             BrainThinkingIndicator(
                 isThinking: playout?.status == .engineThinking
             )
+        }
+        .overlay {
+            ConfettiBurst(trigger: confettiTrigger)
+                .allowsHitTesting(false)
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
@@ -288,6 +294,9 @@ struct DrillView: View {
         let mode = settings?.drillMode ?? .strict
         let threshold = settings?.masteryThreshold ?? 3
         let initialStreak = line.mastery?.correctStreak ?? 0
+        // Snapshot the learned state at session start so onLineComplete
+        // can tell when the run *just* tipped the line into learned.
+        wasLearnedAtSessionStart = line.mastery?.isLearned ?? false
         let s = DrillSession(
             line: snapshot,
             oracle: oracle,
@@ -303,7 +312,15 @@ struct DrillView: View {
             let sfx = SoundEffect.forMove(move, pre: pre, post: post, byUser: byUser)
             player.play(sfx)
         }
-        s.onLineComplete = { player.play(.lineVictory) }
+        s.onLineComplete = {
+            player.play(.lineVictory)
+            // Persistence has already run by this point (attachProgressTracking
+            // wraps this callback as its `priorComplete`). Fire confetti only
+            // on the transition into learned, not on subsequent learned runs.
+            if !wasLearnedAtSessionStart, line.mastery?.isLearned == true {
+                confettiTrigger = Date()
+            }
+        }
         s.onIncorrectMove = { _, _ in player.play(.wrongMove) }
         // Wire persistence *after* the audio callbacks so the helper's
         // composition picks them up as the "prior" closures and still
