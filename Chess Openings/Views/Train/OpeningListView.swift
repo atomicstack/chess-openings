@@ -1,73 +1,84 @@
 import SwiftUI
 import SwiftData
 
-/// Value-based navigation routes used both for normal taps and for
-/// the auto-resume flow. UUIDs (not the @Model class instances) so
-/// the path is stable across app launches — after a relaunch the
-/// SwiftData rehydrates new in-memory objects, but the persistent
-/// ids are unchanged.
-struct OpeningRoute: Hashable {
-    let openingId: UUID
+/// Typed routes for `OpeningListView`'s `NavigationStack`. UUID-based
+/// so the path is stable across launches (rehydrated SwiftData
+/// objects get new in-memory identity; their persistent ids don't).
+enum TrainRoute: Hashable {
+    case opening(UUID)
+    case drill(openingId: UUID, lineId: UUID)
 }
 
+/// Legacy aliases preserved for `OpeningDetailView`'s existing
+/// `NavigationLink(value: DrillRoute(...))` call sites.
 struct DrillRoute: Hashable {
     let openingId: UUID
     let lineId: UUID
 }
 
+struct OpeningRoute: Hashable {
+    let openingId: UUID
+}
+
 struct OpeningListView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\Opening.name)]) private var openings: [Opening]
-    @Query private var persistedPlayouts: [PersistedPlayoutState]
-    @State private var path = NavigationPath()
+    @State private var routes: [TrainRoute] = []
     @State private var didAutoResume = false
 
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack(path: $routes) {
             List {
                 Section("as white") {
                     ForEach(openings.filter { $0.side == .white }) { o in
-                        NavigationLink(value: OpeningRoute(openingId: o.id)) {
+                        NavigationLink(value: TrainRoute.opening(o.id)) {
                             row(for: o)
                         }
                     }
                 }
                 Section("as black") {
                     ForEach(openings.filter { $0.side == .black }) { o in
-                        NavigationLink(value: OpeningRoute(openingId: o.id)) {
+                        NavigationLink(value: TrainRoute.opening(o.id)) {
                             row(for: o)
                         }
                     }
                 }
             }
             .navigationTitle("train")
-            .navigationDestination(for: OpeningRoute.self) { route in
-                if let opening = openings.first(where: { $0.id == route.openingId }) {
-                    OpeningDetailView(opening: opening)
-                } else {
-                    // SwiftData hadn't finished rehydrating when we tried
-                    // to navigate; show a spinner so we don't crash and
-                    // re-evaluate when the query updates.
-                    ProgressView()
-                }
+            .navigationDestination(for: TrainRoute.self) { route in
+                destinationView(for: route)
             }
-            .navigationDestination(for: DrillRoute.self) { route in
-                if let opening = openings.first(where: { $0.id == route.openingId }),
-                   let line = opening.lines.first(where: { $0.id == route.lineId }) {
-                    DrillView(opening: opening, line: line)
-                } else {
-                    ProgressView()
-                }
+            // Bridge `OpeningDetailView`'s value-based NavigationLinks
+            // (which still post `DrillRoute`) onto our typed routes.
+            .navigationDestination(for: DrillRoute.self) { r in
+                destinationView(for: .drill(openingId: r.openingId, lineId: r.lineId))
+            }
+            .navigationDestination(for: OpeningRoute.self) { r in
+                destinationView(for: .opening(r.openingId))
             }
         }
-        // Re-evaluate whenever the queries deliver fresh results. @Query
-        // can land empty on first body evaluation and populate a tick
-        // later, so a one-shot .task + didAutoResume guard would miss
-        // the populated state.
-        .onChange(of: persistedPlayouts.count, initial: true) { _, _ in
-            autoResumeIfNeeded()
-        }
-        .onChange(of: openings.count, initial: true) { _, _ in
-            autoResumeIfNeeded()
+        .task { await autoResumeIfNeeded() }
+    }
+
+    @ViewBuilder
+    private func destinationView(for route: TrainRoute) -> some View {
+        switch route {
+        case .opening(let id):
+            if let opening = openings.first(where: { $0.id == id }) {
+                OpeningDetailView(opening: opening)
+            } else {
+                // SwiftData hadn't rehydrated yet — bail loudly so we
+                // can spot it on device instead of silently navigating
+                // to an empty page.
+                Text("opening not found").foregroundStyle(.red)
+            }
+        case .drill(let openingId, let lineId):
+            if let opening = openings.first(where: { $0.id == openingId }),
+               let line = opening.lines.first(where: { $0.id == lineId }) {
+                DrillView(opening: opening, line: line)
+            } else {
+                Text("line not found").foregroundStyle(.red)
+            }
         }
     }
 
@@ -87,32 +98,35 @@ struct OpeningListView: View {
         }
     }
 
-    private func autoResumeIfNeeded() {
+    /// Direct fetch from the model context so we don't have to race
+    /// `@Query`. Waits one render tick for SwiftData to finish first-
+    /// run setup, then looks for the most recent persisted playout
+    /// and, if found, pushes the matching route stack.
+    @MainActor
+    private func autoResumeIfNeeded() async {
         guard !didAutoResume else { return }
-        // Wait for the queries to actually deliver data before we
-        // decide there's nothing to resume.
-        guard !openings.isEmpty else { return }
-        // Latest snapshot wins if there's somehow more than one row.
-        let latest = persistedPlayouts
-            .sorted { $0.savedAt > $1.savedAt }
-            .first
-        guard let latest else {
-            didAutoResume = true
-            return
-        }
-        guard openings.contains(where: { $0.id == latest.openingId }) else {
-            // Snapshot points at a missing opening (e.g. seed reload
-            // wiped it); clear it lazily on next app run instead of
-            // mutating from a view modifier here. Mark resume done
-            // so we don't loop.
-            didAutoResume = true
-            return
-        }
+        try? await Task.sleep(for: .milliseconds(50))
         didAutoResume = true
-        path.append(OpeningRoute(openingId: latest.openingId))
-        path.append(DrillRoute(
-            openingId: latest.openingId,
-            lineId: latest.lineId
-        ))
+        let descriptor = FetchDescriptor<PersistedPlayoutState>(
+            sortBy: [SortDescriptor(\.savedAt, order: .reverse)]
+        )
+        guard let latest = try? modelContext.fetch(descriptor).first else { return }
+        // Be defensive: only navigate if the saved opening + line still
+        // exist (e.g. a seed reload between launches could have wiped
+        // them). Fetching the Opening directly avoids depending on
+        // the `openings` @Query being populated by this point.
+        let oid = latest.openingId
+        let lid = latest.lineId
+        let openingDescriptor = FetchDescriptor<Opening>(
+            predicate: #Predicate<Opening> { $0.id == oid }
+        )
+        guard let opening = try? modelContext.fetch(openingDescriptor).first,
+              opening.lines.contains(where: { $0.id == lid }) else {
+            return
+        }
+        routes = [
+            .opening(oid),
+            .drill(openingId: oid, lineId: lid)
+        ]
     }
 }

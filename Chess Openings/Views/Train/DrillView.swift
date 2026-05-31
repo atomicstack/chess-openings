@@ -6,8 +6,6 @@ struct DrillView: View {
     let opening: Opening
     let line: Line
 
-    // Force a fresh binary so the user can test playout auto-resume
-    // across an install boundary.
     @Environment(\.modelContext) private var modelContext
     @Query private var settingsList: [UserSettings]
     @Query private var persistedPlayouts: [PersistedPlayoutState]
@@ -433,18 +431,40 @@ struct DrillView: View {
         )
         audio = player
         session = s
-        if opening.side == .black {
-            scheduleBlackSideAutoplay(on: s)
-        }
         // Auto-restore the playout if we left one mid-game on this
-        // line. Skip if the saved game already ended — those snapshots
-        // get cleared by the exit handler but a corrupted shutdown
-        // could leave one behind.
+        // line. The user must have completed the drill before the
+        // playout could have started, so fast-forward the drill's
+        // history to `.lineComplete` first — that way the move list
+        // shows the drill prefix in front of the playout moves and
+        // exiting playout lands the user back in a finished drill,
+        // matching what they had before the relaunch.
         if let saved = persistedPlayouts.first(where: {
             $0.openingId == opening.id && $0.lineId == line.id
         }) {
+            fastForwardDrillToCompletion(s)
             restorePlayout(from: saved)
+        } else if opening.side == .black {
+            scheduleBlackSideAutoplay(on: s)
         }
+    }
+
+    /// Silently replays every book ply into the drill session via
+    /// `autoplayNextBookPly` so it sits in `.lineComplete`. Used when
+    /// restoring a saved playout — the user already finished the
+    /// drill in a prior session, no need to re-grade or re-sound it.
+    private func fastForwardDrillToCompletion(_ s: DrillSession) {
+        let priorMoveApplied = s.onMoveApplied
+        let priorLineComplete = s.onLineComplete
+        let priorIncorrect = s.onIncorrectMove
+        s.onMoveApplied = nil
+        s.onLineComplete = nil
+        s.onIncorrectMove = nil
+        while s.history.count < line.plies.count {
+            s.autoplayNextBookPly()
+        }
+        s.onMoveApplied = priorMoveApplied
+        s.onLineComplete = priorLineComplete
+        s.onIncorrectMove = priorIncorrect
     }
 
     /// Tear-off entry to the engine playout. Builds an
