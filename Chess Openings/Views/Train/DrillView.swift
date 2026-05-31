@@ -6,6 +6,8 @@ struct DrillView: View {
     let opening: Opening
     let line: Line
 
+    // Force a fresh binary so the user can test playout auto-resume
+    // across an install boundary.
     @Environment(\.modelContext) private var modelContext
     @Query private var settingsList: [UserSettings]
     @Query private var persistedPlayouts: [PersistedPlayoutState]
