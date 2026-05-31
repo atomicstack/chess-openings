@@ -101,12 +101,17 @@ final class EngineService: EngineServicing {
 
     private func runInitialSetup() async {
         await engine.start()
-        // wait for the engine to publish readyok / uciok before sending
-        // nnue paths. consume() drains until the predicate matches.
-        await consume(until: { response in
-            if case .readyok = response { return true }
-            return false
-        })
+        // chesskit-engine 0.7's `start()` sends `uci` and stores the
+        // AsyncStream continuation inside a detached `Task` (see
+        // `EngineConfiguration.setAsyncStream`). Stockfish's response
+        // and the library-internal readyok can race the continuation
+        // being wired up — when that happens, yields land in nothing
+        // and our consume(until: readyok) waits forever for a token
+        // that already passed. Sleep briefly so the inner Task can
+        // store the continuation, skip the library's implicit
+        // readyok entirely, and drive our own isready / readyok
+        // handshake that we control end-to-end.
+        try? await Task.sleep(for: .milliseconds(300))
         // nnue filenames are sourced from stockfish's NN-tests catalogue
         // (https://tests.stockfishchess.org/nns) — bump these constants
         // when fetching a newer net revision.

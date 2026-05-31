@@ -574,8 +574,18 @@ struct DrillView: View {
         precomputeTask = nil
         playoutStartingFEN = saved.startingFEN
         playout = session
+        // Engine wake-up. For .engineThinking we play the reply
+        // immediately; for .waitingForUser we run an explicit
+        // precompute so the engine's NNUE setup is done before the
+        // user makes their first move. Previously this only fired
+        // through the `.onChange(of: userOnPlayoutClock, initial:true)`
+        // path — which is fine in theory but the user saw cases
+        // where the engine was still mid-warmup when the post-move
+        // analyser awaited the precompute, leaving submit() blocked.
         if session.status == .engineThinking {
             Task { await session.bootstrap() }
+        } else {
+            schedulePlayoutPrecompute()
         }
     }
 
