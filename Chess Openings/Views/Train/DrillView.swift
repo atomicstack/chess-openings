@@ -15,6 +15,7 @@ struct DrillView: View {
     @State private var audio: AudioService?
     @State private var playout: EnginePlayoutSession?
     @State private var engineService: EngineService?
+    @State private var playoutHint: EngineMove?
 
     private var settings: UserSettings? { settingsList.first }
 
@@ -105,6 +106,15 @@ struct DrillView: View {
             // Force them to explicitly re-enable for the next move.
             hintShown = false
             solutionShown = false
+        }
+        .onChange(of: hintShown) { _, _ in
+            refreshPlayoutHintIfNeeded()
+        }
+        .onChange(of: solutionShown) { _, _ in
+            refreshPlayoutHintIfNeeded()
+        }
+        .onChange(of: playout?.history.count ?? 0) { _, _ in
+            refreshPlayoutHintIfNeeded()
         }
     }
 
@@ -373,24 +383,81 @@ struct DrillView: View {
 
     private func boardHighlights(for s: DrillSession) -> [Square: Set<HighlightKind>] {
         var map: [Square: Set<HighlightKind>] = [:]
-        if let last = s.lastAppliedMove {
+
+        // Last move highlight follows whichever board is shown.
+        if let p = playout, let last = p.history.last {
+            map[last.start, default: []].insert(.lastMove)
+            map[last.end, default: []].insert(.lastMove)
+        } else if let last = s.lastAppliedMove {
             map[last.start, default: []].insert(.lastMove)
             map[last.end, default: []].insert(.lastMove)
         }
-        if (hintShown || solutionShown), s.status != .lineComplete,
-           s.history.count < line.plies.count,
-           let move = SANParser.parse(move: line.plies[s.history.count].san, in: s.position) {
-            // Hint shows only the source square; solution reveals the
-            // full move by adding the destination square.
-            map[move.start, default: []].insert(.hintFrom)
-            if solutionShown {
-                map[move.end, default: []].insert(.hintTo)
+
+        if playout != nil {
+            // Playout hint comes from stockfish at full strength: hint
+            // lights the source square, solution adds the destination.
+            if let uci = playoutHint?.uci,
+               let parsed = parsePlayoutHintUci(uci) {
+                if hintShown {
+                    map[parsed.from, default: []].insert(.hintFrom)
+                }
+                if solutionShown {
+                    map[parsed.from, default: []].insert(.hintFrom)
+                    map[parsed.to, default: []].insert(.hintTo)
+                }
+            }
+        } else {
+            // Drill hint comes from the line book oracle.
+            if (hintShown || solutionShown), s.status != .lineComplete,
+               s.history.count < line.plies.count,
+               let move = SANParser.parse(move: line.plies[s.history.count].san, in: s.position) {
+                // Hint shows only the source square; solution reveals the
+                // full move by adding the destination square.
+                map[move.start, default: []].insert(.hintFrom)
+                if solutionShown {
+                    map[move.end, default: []].insert(.hintTo)
+                }
+            }
+            if case .mistake(let book, _) = s.status {
+                map[book.move.start, default: []].insert(.hintFrom)
+                map[book.move.end, default: []].insert(.hintTo)
             }
         }
-        if case .mistake(let book, _) = s.status {
-            map[book.move.start, default: []].insert(.hintFrom)
-            map[book.move.end, default: []].insert(.hintTo)
-        }
         return map
+    }
+
+    /// Asks stockfish at full strength for its preferred move in the
+    /// current playout position and stores it for highlight rendering.
+    /// Clears the cached hint when neither toggle is on, so stale
+    /// highlights don't leak across positions.
+    private func refreshPlayoutHintIfNeeded() {
+        guard let p = playout, hintShown || solutionShown else {
+            playoutHint = nil
+            return
+        }
+        guard let svc = engineService else { return }
+        let pos = p.position
+        Task {
+            let decision = await svc.bestMove(
+                at: pos,
+                skill: 20,
+                budget: .depth(12)
+            )
+            playoutHint = decision?.move
+        }
+    }
+
+    private func parsePlayoutHintUci(_ uci: String) -> (from: Square, to: Square)? {
+        guard uci.count >= 4 else { return nil }
+        let fromStr = String(uci.prefix(2))
+        let toStr = String(uci.dropFirst(2).prefix(2))
+        guard isAlgebraic(fromStr), isAlgebraic(toStr) else { return nil }
+        return (Square(fromStr), Square(toStr))
+    }
+
+    private func isAlgebraic(_ s: String) -> Bool {
+        guard s.count == 2 else { return false }
+        let chars = Array(s)
+        return ("a"..."h").contains(chars[0]) && ("1"..."8").contains(chars[1])
     }
 }
