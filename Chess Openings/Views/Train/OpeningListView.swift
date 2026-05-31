@@ -9,17 +9,6 @@ enum TrainRoute: Hashable {
     case drill(openingId: UUID, lineId: UUID)
 }
 
-/// Legacy aliases preserved for `OpeningDetailView`'s existing
-/// `NavigationLink(value: DrillRoute(...))` call sites.
-struct DrillRoute: Hashable {
-    let openingId: UUID
-    let lineId: UUID
-}
-
-struct OpeningRoute: Hashable {
-    let openingId: UUID
-}
-
 struct OpeningListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\Opening.name)]) private var openings: [Opening]
@@ -47,14 +36,6 @@ struct OpeningListView: View {
             .navigationTitle("train")
             .navigationDestination(for: TrainRoute.self) { route in
                 destinationView(for: route)
-            }
-            // Bridge `OpeningDetailView`'s value-based NavigationLinks
-            // (which still post `DrillRoute`) onto our typed routes.
-            .navigationDestination(for: DrillRoute.self) { r in
-                destinationView(for: .drill(openingId: r.openingId, lineId: r.lineId))
-            }
-            .navigationDestination(for: OpeningRoute.self) { r in
-                destinationView(for: .opening(r.openingId))
             }
         }
         .task { await autoResumeIfNeeded() }

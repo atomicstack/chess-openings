@@ -15,7 +15,7 @@ struct OpeningDetailView: View {
             if !mastersLines.isEmpty {
                 Section("master games") {
                     ForEach(mastersLines) { line in
-                        NavigationLink(value: DrillRoute(openingId: opening.id, lineId: line.id)) {
+                        NavigationLink(value: TrainRoute.drill(openingId: opening.id, lineId: line.id)) {
                             row(for: line)
                         }
                     }
@@ -24,7 +24,7 @@ struct OpeningDetailView: View {
             if !openLines.isEmpty {
                 Section("online play (2200+)") {
                     ForEach(openLines) { line in
-                        NavigationLink(value: DrillRoute(openingId: opening.id, lineId: line.id)) {
+                        NavigationLink(value: TrainRoute.drill(openingId: opening.id, lineId: line.id)) {
                             row(for: line)
                         }
                     }
@@ -34,7 +34,7 @@ struct OpeningDetailView: View {
         .navigationTitle(opening.name)
         .toolbar {
             if let first = opening.lines.first {
-                NavigationLink("drill all", value: DrillRoute(openingId: opening.id, lineId: first.id))
+                NavigationLink("drill all", value: TrainRoute.drill(openingId: opening.id, lineId: first.id))
             }
             if !opening.isSeed {
                 NavigationLink {
