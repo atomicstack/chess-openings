@@ -13,30 +13,43 @@ enum MoveQuality: Equatable, Sendable {
     case blunder
     case miss
 
-    /// SF Symbol name for the badge icon.
-    var iconName: String {
+    /// What's drawn inside the colored circle on a badge. Either a
+    /// short text glyph (e.g. "!!", "?!") rendered as `Text`, or an
+    /// SF Symbol name rendered as `Image(systemName:)`.
+    enum Glyph: Equatable, Sendable {
+        case text(String)
+        case symbol(String)
+    }
+
+    /// chess.com-style glyph for the badge — the colour, name, and
+    /// glyph mapping mirror `docs/move-quality-reference.html`.
+    var glyph: Glyph {
         switch self {
-        case .brilliant:  return "sparkles"
-        case .best:       return "checkmark.seal.fill"
-        case .excellent:  return "star.fill"
-        case .good:       return "checkmark.circle.fill"
-        case .inaccuracy: return "questionmark.circle.fill"
-        case .mistake:    return "exclamationmark.circle.fill"
-        case .blunder:    return "xmark.circle.fill"
-        case .miss:       return "eye.slash.fill"
+        case .brilliant:  return .text("!!")
+        case .best:       return .symbol("star.fill")
+        case .excellent:  return .symbol("hand.thumbsup.fill")
+        case .good:       return .symbol("checkmark")
+        case .inaccuracy: return .text("?!")
+        case .mistake:    return .text("?")
+        case .blunder:    return .text("??")
+        case .miss:       return .symbol("xmark")
         }
     }
 
+    /// chess.com-style palette. Eyeballed from screenshots; kept as
+    /// hex literals so the badges read identically across light and
+    /// dark mode (SwiftUI's stock `.green` etc. shift with the
+    /// system appearance).
     var color: Color {
         switch self {
-        case .brilliant:  return .cyan
-        case .best:       return .green
-        case .excellent:  return .mint
-        case .good:       return .blue
-        case .inaccuracy: return .yellow
-        case .mistake:    return .orange
-        case .blunder:    return .red
-        case .miss:       return .purple
+        case .brilliant:  return Color(red: 0x1B/255, green: 0xA1/255, blue: 0xA1/255)
+        case .best:       return Color(red: 0x95/255, green: 0xBB/255, blue: 0x4A/255)
+        case .excellent:  return Color(red: 0x95/255, green: 0xBB/255, blue: 0x4A/255)
+        case .good:       return Color(red: 0x95/255, green: 0xAF/255, blue: 0x80/255)
+        case .inaccuracy: return Color(red: 0xF7/255, green: 0xC2/255, blue: 0x45/255)
+        case .mistake:    return Color(red: 0xFF/255, green: 0xA4/255, blue: 0x59/255)
+        case .blunder:    return Color(red: 0xFA/255, green: 0x41/255, blue: 0x2D/255)
+        case .miss:       return Color(red: 0xFF/255, green: 0x77/255, blue: 0x69/255)
         }
     }
 
