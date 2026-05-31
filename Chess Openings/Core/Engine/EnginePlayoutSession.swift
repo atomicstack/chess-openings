@@ -144,6 +144,24 @@ final class EnginePlayoutSession {
         }
     }
 
+    /// User offers a draw. Engine accepts if its eval is within
+    /// ±50 cp of zero (the position is genuinely equal); otherwise
+    /// declines and play resumes. Mate scores always decline.
+    /// No-op when the game is over or the engine is mid-move.
+    func offerDraw() async {
+        guard status == .waitingForUser else { return }
+        status = .drawOffered(byUser: true)
+        let eval = await engine.evaluate(
+            at: position,
+            budget: .depth(12)
+        )
+        if case .cp(let v) = eval, abs(v) <= 50 {
+            status = .gameOver(.drawAgreed)
+        } else {
+            status = .waitingForUser
+        }
+    }
+
     /// User resigns. No-op if the game is already over.
     func resign() {
         if case .gameOver = status { return }
