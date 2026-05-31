@@ -18,6 +18,10 @@ final class EnginePlayoutSession {
     /// (positive = engine winning). `nil` until the engine has run.
     private(set) var lastEngineEval: EngineEvaluation?
 
+    /// Read-only snapshot of the underlying board's state. Used by
+    /// the termination helper.
+    var boardState: Board.State { board.state }
+
     /// Same contract as `DrillSession.onMoveApplied` so the existing
     /// audio plumbing works unchanged.
     var onMoveApplied: ((Move, Position, Position, Bool) -> Void)?
@@ -58,9 +62,32 @@ final class EnginePlayoutSession {
         await playEngineReply()
     }
 
+    /// User submits a move. Validates legality via chesskit, applies
+    /// it, checks for rules-based termination, and either ends the
+    /// game or asks the engine to reply. No-ops if it isn't currently
+    /// the user's turn or if the move is illegal in the current
+    /// position.
+    func submit(_ move: Move) async {
+        guard status == .waitingForUser else { return }
+        guard board.canMove(pieceAt: move.start, to: move.end) else {
+            return
+        }
+        recordApply(move, byUser: true)
+        // FIXME: promotion handling deferred to post-v1 — if the user
+        // submitted a promotion-shaped move, board.state will report
+        // .promotion(...) and reason(forBoardState:) returns nil, so
+        // we fall through to playEngineReply. For v1, parseUCI rejects
+        // engine promotion moves; user-side promotion UX lands later.
+        if let reason = Self.reason(forBoardState: board.state) {
+            status = .gameOver(reason)
+            return
+        }
+        await playEngineReply()
+    }
+
     private func playEngineReply() async {
-        // task 8 will call this from submit() while .waitingForUser; the
-        // assignment isn't redundant once that lands.
+        // called from submit() while .waitingForUser; defensive on
+        // bootstrap entry where status is already .engineThinking.
         status = .engineThinking
         let move = await engine.bestMove(
             at: position,
@@ -73,8 +100,10 @@ final class EnginePlayoutSession {
             return
         }
         recordApply(parsed, byUser: false)
-        // task 8 layers rules-based termination on top of this; for
-        // now the session just hands control back to the user.
+        if let reason = Self.reason(forBoardState: board.state) {
+            status = .gameOver(reason)
+            return
+        }
         status = .waitingForUser
     }
 
@@ -94,7 +123,8 @@ final class EnginePlayoutSession {
 
     /// Bridge a UCI long-algebraic move ("e2e4") to a ChessKit `Move`
     /// legal in `position`. Promotion strings (5-char like "e7e8q")
-    /// are rejected here and will be handled in task 8.
+    /// are rejected here.
+    // FIXME: promotion handling deferred to post-v1
     private func parseUCI(_ uci: String, in pos: Position) -> Move? {
         guard uci.count == 4 else { return nil }
         let fromStr = String(uci.prefix(2))
