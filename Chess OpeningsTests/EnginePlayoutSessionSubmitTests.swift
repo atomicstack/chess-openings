@@ -100,4 +100,41 @@ final class EnginePlayoutSessionSubmitTests: XCTestCase {
         XCTAssertEqual(session.status, .waitingForUser)
         XCTAssertEqual(session.historyByUser, [true, false])
     }
+
+    func test_user_move_into_promotion_leaves_status_waiting_no_engine_call() async throws {
+        // White pawn on e7, ready to promote — but submit should not
+        // fire the engine reply because the user still has to choose a
+        // promotion piece. v1: status stays .waitingForUser, no engine
+        // call. (Promotion completion is a future task.)
+        // Kings parked off the e-file so e7→e8 is a legal pawn promotion
+        // (not blocked by the black king sitting on e8).
+        let fen = "7k/4P3/8/8/8/8/8/K7 w - - 0 1"
+        guard let pos = Position(fen: fen) else {
+            XCTFail("invalid test fen"); return
+        }
+        let fake = FakeEngineService()
+        fake.scriptedBestMoves = ["e8d8"] // would fire if we wrongly called engine
+        let session = EnginePlayoutSession(
+            startingPosition: pos,
+            userSide: .white,
+            level: .default,
+            engine: fake
+        )
+        // e7→e8 as a plain Move (no promotion piece specified) — board.move
+        // will park in .promotion(...) awaiting a piece choice.
+        // chesskit's Square(_:) is non-failable, so use the enum cases.
+        let from: Square = .e7
+        let to: Square = .e8
+        let move = Move(
+            result: .move,
+            piece: Piece(.pawn, color: .white, square: from),
+            start: from,
+            end: to
+        )
+        await session.submit(move)
+        XCTAssertEqual(fake.bestMoveCalls, 0,
+                       "engine must not be called while promotion is pending")
+        XCTAssertEqual(session.status, .waitingForUser,
+                       "session keeps the user on the clock until promotion is resolved")
+    }
 }

@@ -75,13 +75,17 @@ final class EnginePlayoutSession {
         recordApply(move, byUser: true)
         // FIXME: promotion handling deferred to post-v1 — if the user
         // submitted a promotion-shaped move, board.state will report
-        // .promotion(...) and reason(forBoardState:) returns nil, so
-        // we fall through to playEngineReply. For v1, parseUCI rejects
-        // engine promotion moves; user-side promotion UX lands later.
+        // .promotion(...) and reason(forBoardState:) returns nil. For
+        // v1, parseUCI rejects engine promotion moves; user-side
+        // promotion UX lands later.
         if let reason = Self.reason(forBoardState: board.state) {
             status = .gameOver(reason)
             return
         }
+        // v1: user must commit the promotion choice via the existing
+        // promotion picker; don't hand to the engine until that's
+        // resolved.
+        if case .promotion = board.state { return }
         await playEngineReply()
     }
 
