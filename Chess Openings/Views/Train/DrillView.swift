@@ -8,7 +8,9 @@ struct DrillView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Query private var settingsList: [UserSettings]
+    @Query private var persistedPlayouts: [PersistedPlayoutState]
     @State private var session: DrillSession?
+    @State private var playoutStartingFEN: String?
     @State private var hintShown: Bool = false
     @State private var solutionShown: Bool = false
     @State private var showSettingsSheet: Bool = false
@@ -193,6 +195,15 @@ struct DrillView: View {
             hintShown = false
             solutionShown = false
             refreshPlayoutHintIfNeeded()
+            // Persist the current playout snapshot so a relaunch can
+            // resume from this ply.
+            snapshotPlayoutState()
+        }
+        .onChange(of: playoutGameIsOver) { _, isOver in
+            // The game ended (mate, resign, draw, etc.). Wipe the
+            // snapshot so the next launch doesn't try to resume into
+            // a finished game.
+            if isOver { clearPersistedPlayout() }
         }
         .onChange(of: userOnPlayoutClock, initial: true) { _, onClock in
             // Run the bestmove search for the user's current position
@@ -414,6 +425,15 @@ struct DrillView: View {
         if opening.side == .black {
             scheduleBlackSideAutoplay(on: s)
         }
+        // Auto-restore the playout if we left one mid-game on this
+        // line. Skip if the saved game already ended — those snapshots
+        // get cleared by the exit handler but a corrupted shutdown
+        // could leave one behind.
+        if let saved = persistedPlayouts.first(where: {
+            $0.openingId == opening.id && $0.lineId == line.id
+        }) {
+            restorePlayout(from: saved)
+        }
     }
 
     /// Tear-off entry to the engine playout. Builds an
@@ -429,6 +449,7 @@ struct DrillView: View {
         case .resign:
             p.resign()
         case .exit:
+            clearPersistedPlayout()
             playout = nil
             moveAnnotation = nil
             precomputeTask?.cancel()
@@ -450,6 +471,105 @@ struct DrillView: View {
             level: level,
             engine: svc
         )
+        wirePlayoutCallbacks(on: session)
+        moveAnnotation = nil
+        precomputeTask = nil
+        playoutStartingFEN = s.position.fen
+        playout = session
+        snapshotPlayoutState()
+        Task { await session.bootstrap() }
+    }
+
+    /// Resume a previously persisted playout. Builds the playout
+    /// session at the saved starting position, silently replays the
+    /// saved move history into it (no audio sfx, no engine queries),
+    /// wires the live callbacks the way `startPlayout` does, then
+    /// hands control back to the user (or kicks the engine straight
+    /// into thinking if the saved state says it's the engine's turn).
+    /// No-op if the snapshot can't be reconstructed against the
+    /// starting position (corrupted state — wipe and start over).
+    private func restorePlayout(from saved: PersistedPlayoutState) {
+        guard let startingPos = Position(fen: saved.startingFEN) else {
+            modelContext.delete(saved)
+            try? modelContext.save()
+            return
+        }
+        let userSide: Side = saved.userSideRaw == "black" ? .black : .white
+        let level = EngineLevel(rawSkill: saved.engineLevel)
+        let svc = engineService ?? EngineService()
+        engineService = svc
+        let session = EnginePlayoutSession(
+            startingPosition: startingPos,
+            userSide: userSide,
+            level: level,
+            engine: svc
+        )
+        guard let reconstructed = saved.moves.reconstruct(from: startingPos) else {
+            modelContext.delete(saved)
+            try? modelContext.save()
+            return
+        }
+        session.restore(history: reconstructed)
+        wirePlayoutCallbacks(on: session)
+        moveAnnotation = nil
+        precomputeTask = nil
+        playoutStartingFEN = saved.startingFEN
+        playout = session
+        if session.status == .engineThinking {
+            Task { await session.bootstrap() }
+        }
+    }
+
+    /// Persist the playout snapshot for this line, creating a new
+    /// `PersistedPlayoutState` row if needed. Called on every history
+    /// change (incl. undo) so a relaunch puts the user back at the
+    /// current ply. Cleared by `clearPersistedPlayout` on exit / game
+    /// end.
+    private func snapshotPlayoutState() {
+        guard let p = playout, let startingFEN = playoutStartingFEN else { return }
+        let stored = zip(p.history, p.historyByUser).map { (move, byUser) in
+            StoredMove(move: move, byUser: byUser)
+        }
+        let data = (try? JSONEncoder().encode(stored)) ?? Data()
+        let oid = opening.id
+        let lid = line.id
+        let existing = persistedPlayouts.first { $0.openingId == oid && $0.lineId == lid }
+        if let existing {
+            existing.startingFEN = startingFEN
+            existing.userSideRaw = opening.side == .black ? "black" : "white"
+            existing.engineLevel = p.level.stockfishSkill
+            existing.movesData = data
+            existing.savedAt = Date()
+        } else {
+            let new = PersistedPlayoutState(
+                openingId: oid,
+                lineId: lid,
+                startingFEN: startingFEN,
+                userSideRaw: opening.side == .black ? "black" : "white",
+                engineLevel: p.level.stockfishSkill,
+                movesData: data
+            )
+            modelContext.insert(new)
+        }
+        try? modelContext.save()
+    }
+
+    /// Remove the persisted snapshot for this line (called when the
+    /// user exits playout or the game ends — we don't want to resume
+    /// into a finished game on next launch).
+    private func clearPersistedPlayout() {
+        let oid = opening.id
+        let lid = line.id
+        for state in persistedPlayouts where state.openingId == oid && state.lineId == lid {
+            modelContext.delete(state)
+        }
+        try? modelContext.save()
+    }
+
+    /// Shared playout callback wiring used by `startPlayout` and
+    /// `restorePlayout` so a restored session behaves the same as a
+    /// freshly-started one.
+    private func wirePlayoutCallbacks(on session: EnginePlayoutSession) {
         session.onMoveApplied = { [weak audio] move, pre, post, byUser in
             let sfx = SoundEffect.forMove(
                 move, pre: pre, post: post, byUser: byUser
@@ -461,11 +581,6 @@ struct DrillView: View {
             let depth = settings?.moveAnalysisDepth ?? 10
             let budget = SearchBudget.depth(depth)
 
-            // Step 1 — best-move at `pre`. If a precompute fired while
-            // the user was on the clock and it was for this same
-            // position, await its result instead of issuing a fresh
-            // call. Saves one engine round-trip per move for any user
-            // who thought longer than the precompute's depth budget.
             let decision: EngineDecision?
             if let task = precomputeTask {
                 let cached = await task.value
@@ -478,16 +593,12 @@ struct DrillView: View {
                 decision = await svc.bestMove(at: pre, skill: 20, budget: budget)
             }
 
-            // Step 2 — eval the position the user actually reached.
-            // Can't be precomputed; we don't know `post` until they move.
             let postEval = await svc.evaluate(at: post, budget: budget)
             let bestCp = decision?.evaluation?.clampedCp ?? 0
             let actualCp = -postEval.clampedCp
             let isWinning = bestCp >= 200
             let isBrilliant = isBrilliantCandidate(
-                userMove: move,
-                pre: pre,
-                post: post,
+                userMove: move, pre: pre, post: post,
                 userSide: opening.side,
                 bestUci: decision?.move.uci,
                 bestEvalCp: bestCp,
@@ -504,18 +615,8 @@ struct DrillView: View {
                 quality: quality,
                 id: Date()
             )
-            // Give the badge ~250 ms of breathing room before the
-            // session continues into playEngineReply — the analyser
-            // is awaited inline by submit() so this sleep delays the
-            // engine's response by the same amount, making the badge
-            // legible instead of being immediately overwritten by the
-            // engine's move animation.
             try? await Task.sleep(for: .milliseconds(250))
         }
-        moveAnnotation = nil
-        precomputeTask = nil
-        playout = session
-        Task { await session.bootstrap() }
     }
 
     /// Whether the user is on the clock — used as the trigger for
@@ -523,6 +624,14 @@ struct DrillView: View {
     /// engine-first openings) and after every engine reply.
     private var userOnPlayoutClock: Bool {
         playout?.status == .waitingForUser
+    }
+
+    /// Whether the active playout reached a terminal state (mate,
+    /// draw, resignation, etc.). Used to drive snapshot cleanup so a
+    /// finished game isn't auto-resumed on next launch.
+    private var playoutGameIsOver: Bool {
+        if case .gameOver = playout?.status { return true }
+        return false
     }
 
     /// Kicks off (or restarts) the bestmove precompute for the

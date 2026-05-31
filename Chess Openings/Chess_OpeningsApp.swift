@@ -9,6 +9,7 @@ struct Chess_OpeningsApp: App {
             Line.self,
             LineProgress.self,
             UserSettings.self,
+            PersistedPlayoutState.self,
         ])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {

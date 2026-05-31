@@ -224,6 +224,40 @@ final class EnginePlayoutSession {
         historyByUser.append(byUser)
     }
 
+    /// Silently replay a persisted history of `(move, byUser)` pairs
+    /// against the session's current position. Each move goes through
+    /// the same `apply()` path used by `submit` / `playEngineReply`,
+    /// so promotions, capture state, and `position` updates all stay
+    /// consistent. The `onMoveApplied` callback is suspended for the
+    /// duration of the restore so audio sfx don't fire for moves the
+    /// user already heard.
+    ///
+    /// After restoring, the status is set based on `Board.state`:
+    /// - rules-based termination → `.gameOver(reason)`
+    /// - user is on the clock     → `.waitingForUser`
+    /// - engine is on the clock   → `.engineThinking`
+    func restore(history persisted: [(move: Move, byUser: Bool)]) {
+        let priorCallback = onMoveApplied
+        onMoveApplied = nil
+        defer { onMoveApplied = priorCallback }
+
+        for (move, byUser) in persisted {
+            recordApply(move, byUser: byUser)
+        }
+
+        if let reason = Self.reason(forBoardState: board.state) {
+            status = .gameOver(reason)
+            return
+        }
+        let userOnMove: Bool = {
+            switch (userSide, position.sideToMove) {
+            case (.white, .white), (.black, .black): return true
+            default:                                  return false
+            }
+        }()
+        status = userOnMove ? .waitingForUser : .engineThinking
+    }
+
     /// Bridge a UCI long-algebraic move ("e2e4") to a ChessKit `Move`
     /// legal in `position`. Promotion strings (5-char like "e7e8q")
     /// are rejected here.

@@ -15,14 +15,18 @@ struct OpeningDetailView: View {
             if !mastersLines.isEmpty {
                 Section("master games") {
                     ForEach(mastersLines) { line in
-                        NavigationLink { DrillView(opening: opening, line: line) } label: { row(for: line) }
+                        NavigationLink(value: DrillRoute(opening: opening, line: line)) {
+                            row(for: line)
+                        }
                     }
                 }
             }
             if !openLines.isEmpty {
                 Section("online play (2200+)") {
                     ForEach(openLines) { line in
-                        NavigationLink { DrillView(opening: opening, line: line) } label: { row(for: line) }
+                        NavigationLink(value: DrillRoute(opening: opening, line: line)) {
+                            row(for: line)
+                        }
                     }
                 }
             }
@@ -30,7 +34,7 @@ struct OpeningDetailView: View {
         .navigationTitle(opening.name)
         .toolbar {
             if let first = opening.lines.first {
-                NavigationLink("drill all") { DrillView(opening: opening, line: first) }
+                NavigationLink("drill all", value: DrillRoute(opening: opening, line: first))
             }
             if !opening.isSeed {
                 NavigationLink {
