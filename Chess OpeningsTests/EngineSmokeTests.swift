@@ -21,8 +21,8 @@ final class EngineSmokeTests: XCTestCase {
             skill: 20,
             budget: .movetimeMs(300)
         )
-        XCTAssertNotNil(move, "engine returned no bestmove")
-        XCTAssertGreaterThanOrEqual(move?.uci.count ?? 0, 4,
+        let m = try XCTUnwrap(move, "engine returned no bestmove")
+        XCTAssertGreaterThanOrEqual(m.uci.count, 4,
                                     "uci move must be 4 chars (or 5 with promo)")
         await service.shutdown()
     }
