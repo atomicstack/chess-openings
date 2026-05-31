@@ -6,6 +6,7 @@ struct DrillView: View {
     let opening: Opening
     let line: Line
 
+    @Environment(\.modelContext) private var modelContext
     @Query private var settingsList: [UserSettings]
     @State private var session: DrillSession?
     @State private var hintShown: Bool = false
@@ -221,7 +222,15 @@ struct DrillView: View {
             player.play(sfx)
         }
         s.onLineComplete = { player.play(.lineVictory) }
-        s.onIncorrectMove = { player.play(.wrongMove) }
+        s.onIncorrectMove = { _, _ in player.play(.wrongMove) }
+        // Wire persistence *after* the audio callbacks so the helper's
+        // composition picks them up as the "prior" closures and still
+        // fires them once persistence has run.
+        s.attachProgressTracking(
+            line: line,
+            threshold: threshold,
+            context: modelContext
+        )
         audio = player
         session = s
         if opening.side == .black {

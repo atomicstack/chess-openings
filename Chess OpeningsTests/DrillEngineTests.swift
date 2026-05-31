@@ -370,7 +370,7 @@ final class DrillEngineTests: XCTestCase {
             masteryThreshold: 3
         )
         var fired = 0
-        session.onIncorrectMove = { fired += 1 }
+        session.onIncorrectMove = { _, _ in fired += 1 }
 
         let d4 = try SanCodec.parse("d4", in: Position.standard)
         await session.submit(d4)
@@ -388,7 +388,7 @@ final class DrillEngineTests: XCTestCase {
             masteryThreshold: 3
         )
         var fired = 0
-        session.onIncorrectMove = { fired += 1 }
+        session.onIncorrectMove = { _, _ in fired += 1 }
 
         let d4 = try SanCodec.parse("d4", in: Position.standard)
         await session.submit(d4)

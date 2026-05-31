@@ -34,8 +34,10 @@ final class DrillSession {
 
     /// Fires when the user submits a move that isn't in the book.
     /// Independent of the resulting `DrillStatus` — both strict and
-    /// show-and-retry modes fire this.
-    var onIncorrectMove: (() -> Void)?
+    /// show-and-retry modes fire this. The `bookPly` is what the
+    /// session expected at this position; `playedSan` is the SAN of
+    /// the move the user actually played.
+    var onIncorrectMove: ((_ bookPly: BookPly, _ playedSan: String) -> Void)?
 
     private(set) var position: Position
     private(set) var history: [Move]
@@ -124,7 +126,11 @@ final class DrillSession {
             // off-book
             completedWithoutMistake = false
             correctStreak = 0
-            onIncorrectMove?()
+            let bookPly = history.count < line.plies.count
+                ? line.plies[history.count]
+                : BookPly(san: "", uci: "")
+            let playedSan = SanCodec.format(move, in: position)
+            onIncorrectMove?(bookPly, playedSan)
             switch mode {
             case .strict:
                 // ui snaps piece back; no state change
