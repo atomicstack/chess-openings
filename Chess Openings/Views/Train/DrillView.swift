@@ -20,6 +20,11 @@ struct DrillView: View {
     @State private var confettiTrigger: Date?
     @State private var moveAnnotation: MoveAnnotation?
     @State private var pendingConfirmation: PlayoutConfirmation?
+    /// Bestmove search fired while the user is on the clock. Returns
+    /// the position it was started for plus the resulting decision so
+    /// the post-move analyser can verify it's still relevant before
+    /// using the cached result.
+    @State private var precomputeTask: Task<(position: Position, decision: EngineDecision?), Never>?
 
     /// Which match-management action is awaiting user confirmation.
     /// `nil` when no modal is up.
@@ -188,6 +193,14 @@ struct DrillView: View {
             hintShown = false
             solutionShown = false
             refreshPlayoutHintIfNeeded()
+        }
+        .onChange(of: userOnPlayoutClock, initial: true) { _, onClock in
+            // Run the bestmove search for the user's current position
+            // while they think, so the post-move analyser can re-use
+            // it instead of running it then.
+            if onClock {
+                schedulePlayoutPrecompute()
+            }
         }
     }
 
@@ -418,6 +431,8 @@ struct DrillView: View {
         case .exit:
             playout = nil
             moveAnnotation = nil
+            precomputeTask?.cancel()
+            precomputeTask = nil
             Task { await engineService?.shutdown() }
         }
     }
@@ -445,7 +460,26 @@ struct DrillView: View {
             guard let svc = engineService else { return }
             let depth = settings?.moveAnalysisDepth ?? 10
             let budget = SearchBudget.depth(depth)
-            let decision = await svc.bestMove(at: pre, skill: 20, budget: budget)
+
+            // Step 1 — best-move at `pre`. If a precompute fired while
+            // the user was on the clock and it was for this same
+            // position, await its result instead of issuing a fresh
+            // call. Saves one engine round-trip per move for any user
+            // who thought longer than the precompute's depth budget.
+            let decision: EngineDecision?
+            if let task = precomputeTask {
+                let cached = await task.value
+                if cached.position == pre, let d = cached.decision {
+                    decision = d
+                } else {
+                    decision = await svc.bestMove(at: pre, skill: 20, budget: budget)
+                }
+            } else {
+                decision = await svc.bestMove(at: pre, skill: 20, budget: budget)
+            }
+
+            // Step 2 — eval the position the user actually reached.
+            // Can't be precomputed; we don't know `post` until they move.
             let postEval = await svc.evaluate(at: post, budget: budget)
             let bestCp = decision?.evaluation?.clampedCp ?? 0
             let actualCp = -postEval.clampedCp
@@ -472,8 +506,35 @@ struct DrillView: View {
             )
         }
         moveAnnotation = nil
+        precomputeTask = nil
         playout = session
         Task { await session.bootstrap() }
+    }
+
+    /// Whether the user is on the clock — used as the trigger for
+    /// the bestmove precompute. Switches to true after bootstrap (for
+    /// engine-first openings) and after every engine reply.
+    private var userOnPlayoutClock: Bool {
+        playout?.status == .waitingForUser
+    }
+
+    /// Kicks off (or restarts) the bestmove precompute for the
+    /// current playout position. Cancelling the existing task is a
+    /// no-op against in-flight engine work (the call still completes
+    /// on the queue), but ensures we don't await a stale result.
+    private func schedulePlayoutPrecompute() {
+        guard let p = playout, let svc = engineService else { return }
+        let depth = settings?.moveAnalysisDepth ?? 10
+        let pos = p.position
+        precomputeTask?.cancel()
+        precomputeTask = Task {
+            let decision = await svc.bestMove(
+                at: pos,
+                skill: 20,
+                budget: .depth(depth)
+            )
+            return (position: pos, decision: decision)
+        }
     }
 
     /// For black-side openings, wait ~750ms after the board is shown before
