@@ -9,50 +9,54 @@ struct PlayoutControlsRow: View {
     let onExitPlayout: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Button {
-                hintShown.toggle()
-                if hintShown { solutionShown = false }
-            } label: {
-                Label(hintShown ? "hide hint" : "hint",
-                      systemImage: "lightbulb")
-            }
-            .tint(.green)
-            .disabled(!isLive)
+        VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                Button {
+                    hintShown.toggle()
+                    if hintShown { solutionShown = false }
+                } label: {
+                    Label(hintShown ? "hide hint" : "hint",
+                          systemImage: "lightbulb")
+                }
+                .tint(.green)
+                .disabled(!isLive)
 
-            Button {
-                solutionShown.toggle()
-                if solutionShown { hintShown = false }
-            } label: {
-                Label(solutionShown ? "hide" : "best move",
-                      systemImage: "eye")
-            }
-            .tint(.blue)
-            .disabled(!isLive)
+                Button {
+                    solutionShown.toggle()
+                    if solutionShown { hintShown = false }
+                } label: {
+                    Label(solutionShown ? "hide" : "best move",
+                          systemImage: "eye")
+                }
+                .tint(.blue)
+                .disabled(!isLive)
 
-            Button {
-                session.undo()
-            } label: {
-                Label("undo", systemImage: "arrow.uturn.backward")
+                Button {
+                    session.undo()
+                } label: {
+                    Label("undo", systemImage: "arrow.uturn.backward")
+                }
+                .tint(.orange)
+                .disabled(!isLive || session.history.isEmpty)
             }
-            .tint(.orange)
-            .disabled(!isLive || session.history.isEmpty)
 
-            Button(action: onOfferDraw) {
-                Label("draw", systemImage: "equal.circle")
-            }
-            .tint(.gray)
-            .disabled(!isLive)
+            HStack(spacing: 12) {
+                Button(action: onOfferDraw) {
+                    Label("draw", systemImage: "equal.circle")
+                }
+                .tint(.gray)
+                .disabled(!isLive)
 
-            Button(role: .destructive, action: onResign) {
-                Label("resign", systemImage: "flag")
-            }
-            .disabled(!isLive)
+                Button(role: .destructive, action: onResign) {
+                    Label("resign", systemImage: "flag")
+                }
+                .disabled(!isLive)
 
-            Button(action: onExitPlayout) {
-                Label("exit", systemImage: "xmark")
+                Button(action: onExitPlayout) {
+                    Label("exit", systemImage: "xmark")
+                }
+                .tint(.gray)
             }
-            .tint(.gray)
         }
         .padding(.horizontal)
     }
