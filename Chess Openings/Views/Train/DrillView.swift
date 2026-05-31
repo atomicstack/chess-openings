@@ -19,7 +19,6 @@ struct DrillView: View {
     @State private var wasLearnedAtSessionStart: Bool = false
     @State private var confettiTrigger: Date?
     @State private var moveAnnotation: MoveAnnotation?
-    @State private var lastAnalysedUserMoveIndex: Int?
 
     private var settings: UserSettings? { settingsList.first }
 
@@ -58,7 +57,6 @@ struct DrillView: View {
                         onExitPlayout: {
                             playout = nil
                             moveAnnotation = nil
-                            lastAnalysedUserMoveIndex = nil
                             Task { await engineService?.shutdown() }
                         }
                     )
@@ -132,7 +130,6 @@ struct DrillView: View {
             hintShown = false
             solutionShown = false
             refreshPlayoutHintIfNeeded()
-            analyseLatestUserMoveIfNeeded()
         }
     }
 
@@ -367,8 +364,27 @@ struct DrillView: View {
             )
             audio?.play(sfx)
         }
+        session.onUserMoveAnalysing = { [weak engineService] move, pre, post in
+            guard let svc = engineService else { return }
+            let depth = settings?.moveAnalysisDepth ?? 10
+            let budget = SearchBudget.depth(depth)
+            let decision = await svc.bestMove(at: pre, skill: 20, budget: budget)
+            let postEval = await svc.evaluate(at: post, budget: budget)
+            let bestCp = decision?.evaluation?.clampedCp ?? 0
+            let actualCp = -postEval.clampedCp
+            let isWinning = bestCp >= 200
+            let quality = MoveQuality.classify(
+                bestEvalCp: bestCp,
+                actualEvalCp: actualCp,
+                bestEvalIsWinning: isWinning
+            )
+            moveAnnotation = MoveAnnotation(
+                square: move.end,
+                quality: quality,
+                id: Date()
+            )
+        }
         moveAnnotation = nil
-        lastAnalysedUserMoveIndex = nil
         playout = session
         Task { await session.bootstrap() }
     }
@@ -489,78 +505,6 @@ struct DrillView: View {
             }
             playoutHint = decision?.move
         }
-    }
-
-    private func analyseLatestUserMoveIfNeeded() {
-        guard let p = playout, let svc = engineService else { return }
-        // most recent user move
-        guard let idx = p.historyByUser.lastIndex(of: true) else {
-            lastAnalysedUserMoveIndex = nil
-            return
-        }
-        // already covered? (e.g. onChange fired from undo)
-        if let prior = lastAnalysedUserMoveIndex, idx <= prior {
-            // Sync the watermark down so a fresh forward move from here
-            // is correctly detected as new.
-            lastAnalysedUserMoveIndex = idx
-            return
-        }
-        // grab pre/post positions and the move
-        guard idx < p.preMovePositions.count,
-              idx < p.history.count else { return }
-        let pre = p.preMovePositions[idx]
-        let userMove = p.history[idx]
-        let post = positionAfterUserMove(in: p, userMoveIndex: idx)
-        let depth = settings?.moveAnalysisDepth ?? 10
-        let budget = SearchBudget.depth(depth)
-        let destSquare = userMove.end
-        lastAnalysedUserMoveIndex = idx
-
-        Task {
-            // best move at the pre-move position — eval is user's POV
-            let decision = await svc.bestMove(
-                at: pre,
-                skill: 20,
-                budget: budget
-            )
-            // eval at the position after the user moved — engine's POV
-            let postEval = await svc.evaluate(
-                at: post,
-                budget: budget
-            )
-            let bestCp = decision?.evaluation?.clampedCp ?? 0
-            let actualCp = -postEval.clampedCp   // negate to user's POV
-            let isWinning = bestCp >= 200
-            let quality = MoveQuality.classify(
-                bestEvalCp: bestCp,
-                actualEvalCp: actualCp,
-                bestEvalIsWinning: isWinning
-            )
-            // Stale-guard: skip if user has moved further while we were
-            // analysing or has exited the playout.
-            guard let current = playout,
-                  current.historyByUser.lastIndex(of: true) == idx else {
-                return
-            }
-            moveAnnotation = MoveAnnotation(
-                square: destSquare,
-                quality: quality,
-                id: Date()
-            )
-        }
-    }
-
-    /// The position the user reached with their move — i.e. the position
-    /// at `preMovePositions[idx + 1]` if an engine reply followed, or the
-    /// current `position` if their move ended the game.
-    private func positionAfterUserMove(
-        in p: EnginePlayoutSession,
-        userMoveIndex idx: Int
-    ) -> Position {
-        if idx + 1 < p.preMovePositions.count {
-            return p.preMovePositions[idx + 1]
-        }
-        return p.position
     }
 
     private func parsePlayoutHintUci(_ uci: String) -> (from: Square, to: Square)? {

@@ -36,6 +36,12 @@ final class EnginePlayoutSession {
     /// audio plumbing works unchanged.
     var onMoveApplied: ((Move, Position, Position, Bool) -> Void)?
 
+    /// Async hook fired after a user move is applied but before the
+    /// engine reply queues. The session awaits this callback inline so
+    /// any work it does (e.g. queueing analysis queries on the shared
+    /// engine) completes before `playEngineReply` adds its own call.
+    var onUserMoveAnalysing: ((Move, Position, Position) async -> Void)?
+
     private var board: Board
 
     init(
@@ -82,7 +88,9 @@ final class EnginePlayoutSession {
         guard board.canMove(pieceAt: move.start, to: move.end) else {
             return
         }
+        let preBeforeApply = position
         recordApply(move, byUser: true)
+        let postAfterApply = position
         // FIXME: promotion handling deferred to post-v1 — if the user
         // submitted a promotion-shaped move, board.state will report
         // .promotion(...) and reason(forBoardState:) returns nil. For
@@ -96,6 +104,9 @@ final class EnginePlayoutSession {
         // promotion picker; don't hand to the engine until that's
         // resolved.
         if case .promotion = board.state { return }
+        if let cb = onUserMoveAnalysing {
+            await cb(move, preBeforeApply, postAfterApply)
+        }
         await playEngineReply()
     }
 
