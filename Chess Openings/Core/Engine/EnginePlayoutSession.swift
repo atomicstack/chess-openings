@@ -18,6 +18,16 @@ final class EnginePlayoutSession {
     /// (positive = engine winning). `nil` until the engine has run.
     private(set) var lastEngineEval: EngineEvaluation?
 
+    /// Centipawn threshold (engine pov) below which a reply counts
+    /// toward the resignation window. `300` means the engine
+    /// considers itself at least 3 pawns down.
+    var resignationThresholdCp: Int = 300
+    /// Number of consecutive low-eval replies needed before the
+    /// engine offers to resign. Production default is 6.
+    var resignationWindowSize: Int = 6
+
+    private var resignationWindow: [EngineEvaluation] = []
+
     /// Read-only snapshot of the underlying board's state. Used by
     /// the termination helper.
     var boardState: Board.State { board.state }
@@ -105,11 +115,58 @@ final class EnginePlayoutSession {
         }
         recordApply(parsed, byUser: false)
         lastEngineEval = decision.evaluation
+
         if let reason = Self.reason(forBoardState: board.state) {
             status = .gameOver(reason)
             return
         }
+
+        if let eval = decision.evaluation,
+           isEngineLosing(eval, thresholdCp: resignationThresholdCp) {
+            resignationWindow.append(eval)
+            if resignationWindow.count >= resignationWindowSize {
+                status = .gameOver(.engineResigned(accepted: nil))
+                return
+            }
+        } else {
+            resignationWindow.removeAll()
+        }
+
         status = .waitingForUser
+    }
+
+    private func isEngineLosing(
+        _ eval: EngineEvaluation, thresholdCp: Int
+    ) -> Bool {
+        switch eval {
+        case .cp(let v):    return v <= -thresholdCp
+        case .mate(let n):  return n < 0   // engine being mated
+        }
+    }
+
+    /// User resigns. No-op if the game is already over.
+    func resign() {
+        if case .gameOver = status { return }
+        status = .gameOver(.userResigned)
+    }
+
+    /// The user declined the engine's resignation modal — keep
+    /// playing. Clears the window so the engine doesn't immediately
+    /// re-offer on the next reply.
+    func declineEngineResignation() {
+        guard case .gameOver(.engineResigned(accepted: nil)) = status else {
+            return
+        }
+        resignationWindow.removeAll()
+        status = .waitingForUser
+    }
+
+    /// The user accepted the engine's resignation — they win.
+    func acceptEngineResignation() {
+        guard case .gameOver(.engineResigned(accepted: nil)) = status else {
+            return
+        }
+        status = .gameOver(.engineResigned(accepted: true))
     }
 
     private func apply(_ move: Move, byUser: Bool) {
