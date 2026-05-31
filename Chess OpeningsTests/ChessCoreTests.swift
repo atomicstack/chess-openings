@@ -109,4 +109,16 @@ final class ChessCoreTests: XCTestCase {
         let s = UserSettings()
         XCTAssertEqual(s.seededVersion, 0)
     }
+
+    func test_user_settings_default_engine_level_is_ten() {
+        let s = UserSettings()
+        XCTAssertEqual(s.engineLevel, 10)
+    }
+
+    func test_user_settings_clamps_engine_level_into_0_through_20() {
+        let s = UserSettings(engineLevel: 99)
+        XCTAssertEqual(s.engineLevel, 20)
+        let t = UserSettings(engineLevel: -5)
+        XCTAssertEqual(t.engineLevel, 0)
+    }
 }

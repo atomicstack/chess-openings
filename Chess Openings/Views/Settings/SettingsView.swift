@@ -22,6 +22,20 @@ struct SettingsView: View {
                 Section("sound") {
                     Toggle("move + feedback sounds", isOn: bindingSounds())
                 }
+                Section("engine") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("difficulty: \(currentEngineLevel())")
+                            .font(.callout)
+                        Slider(
+                            value: bindingEngineLevel(),
+                            in: 0...20,
+                            step: 1
+                        )
+                        Text("0 = very weak, 20 = full strength")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Section("data") {
                     Button("reset all progress", role: .destructive) { resetProgress() }
                 }
@@ -48,6 +62,17 @@ struct SettingsView: View {
     private func bindingSounds() -> Binding<Bool> {
         Binding(get: { self.current().soundsEnabled },
                 set: { self.current().soundsEnabled = $0; try? context.save() })
+    }
+    private func currentEngineLevel() -> Int { current().engineLevel }
+
+    private func bindingEngineLevel() -> Binding<Double> {
+        Binding(
+            get: { Double(self.current().engineLevel) },
+            set: {
+                self.current().engineLevel = max(0, min(20, Int($0.rounded())))
+                try? context.save()
+            }
+        )
     }
     private func resetProgress() {
         do {

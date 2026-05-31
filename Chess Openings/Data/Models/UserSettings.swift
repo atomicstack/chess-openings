@@ -7,6 +7,7 @@ final class UserSettings {
     var masteryThreshold: Int
     var soundsEnabled: Bool = true
     var seededVersion: Int = 0
+    var engineLevel: Int = 10
 
     var drillMode: DrillMode {
         get { DrillMode(rawValue: drillModeRaw) ?? .strict }
@@ -17,11 +18,13 @@ final class UserSettings {
         drillMode: DrillMode = .strict,
         masteryThreshold: Int = 3,
         soundsEnabled: Bool = true,
-        seededVersion: Int = 0
+        seededVersion: Int = 0,
+        engineLevel: Int = 10
     ) {
         self.drillModeRaw = drillMode.rawValue
         self.masteryThreshold = masteryThreshold
         self.soundsEnabled = soundsEnabled
         self.seededVersion = seededVersion
+        self.engineLevel = max(0, min(20, engineLevel))
     }
 }
