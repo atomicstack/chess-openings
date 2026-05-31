@@ -13,6 +13,8 @@ struct DrillView: View {
     @State private var solutionShown: Bool = false
     @State private var showSettingsSheet: Bool = false
     @State private var audio: AudioService?
+    @State private var playout: EnginePlayoutSession?
+    @State private var engineService: EngineService?
 
     private var settings: UserSettings? { settingsList.first }
 
@@ -117,6 +119,13 @@ struct DrillView: View {
                     .foregroundStyle(.yellow)
                     .symbolEffect(.bounce, options: .repeat(.continuous))
             }
+            Button("play it out →") {
+                startPlayout(from: s)
+            }
+            .font(.callout)
+            .buttonStyle(.borderedProminent)
+            .tint(.blue)
+            .padding(.leading, 8)
         }
     }
 
@@ -236,6 +245,33 @@ struct DrillView: View {
         if opening.side == .black {
             scheduleBlackSideAutoplay(on: s)
         }
+    }
+
+    /// Tear-off entry to the engine playout. Builds an
+    /// `EnginePlayoutSession` from the drill's final position + the
+    /// user's side + chosen difficulty, reuses the existing
+    /// `AudioService` for engine moves, and triggers bootstrap so
+    /// engine-first openings (user-as-black) play white's first move
+    /// immediately. The playout's own ui rendering ships in tasks
+    /// 14-16; for now the state lives in `@State playout`.
+    private func startPlayout(from s: DrillSession) {
+        let svc = engineService ?? EngineService()
+        engineService = svc
+        let level = EngineLevel(rawSkill: settings?.engineLevel ?? 10)
+        let session = EnginePlayoutSession(
+            startingPosition: s.position,
+            userSide: opening.side,
+            level: level,
+            engine: svc
+        )
+        session.onMoveApplied = { [weak audio] move, pre, post, byUser in
+            let sfx = SoundEffect.forMove(
+                move, pre: pre, post: post, byUser: byUser
+            )
+            audio?.play(sfx)
+        }
+        playout = session
+        Task { await session.bootstrap() }
     }
 
     /// For black-side openings, wait ~750ms after the board is shown before
