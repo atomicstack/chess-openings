@@ -20,20 +20,21 @@ struct OpeningListView: View {
             List {
                 Section("as white") {
                     ForEach(openings.filter { $0.side == .white }) { o in
-                        NavigationLink(value: TrainRoute.opening(o.id)) {
-                            row(for: o)
-                        }
+                        NavigationLink { OpeningDetailView(opening: o) } label: { row(for: o) }
                     }
                 }
                 Section("as black") {
                     ForEach(openings.filter { $0.side == .black }) { o in
-                        NavigationLink(value: TrainRoute.opening(o.id)) {
-                            row(for: o)
-                        }
+                        NavigationLink { OpeningDetailView(opening: o) } label: { row(for: o) }
                     }
                 }
             }
             .navigationTitle("train")
+            // navigationDestination is only used by the auto-resume
+            // path append. User taps use closure-style NavigationLinks
+            // above — mixing both styles in a single NavigationStack
+            // works fine; closures push directly, values route through
+            // the destination handlers below.
             .navigationDestination(for: TrainRoute.self) { route in
                 destinationView(for: route)
             }
