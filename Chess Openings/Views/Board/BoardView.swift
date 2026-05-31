@@ -50,6 +50,8 @@ struct BoardView: View {
     let position: Position
     let orientation: Side
     let highlights: [Square: Set<HighlightKind>]
+    let moveAnnotation: MoveAnnotation?
+    let moveAnnotationDurationMs: Int
     let onMove: (Move) -> Void
 
     @State private var selected: Square?
@@ -66,11 +68,15 @@ struct BoardView: View {
         position: Position,
         orientation: Side = .white,
         highlights: [Square: Set<HighlightKind>] = [:],
+        moveAnnotation: MoveAnnotation? = nil,
+        moveAnnotationDurationMs: Int = 1500,
         onMove: @escaping (Move) -> Void = { _ in }
     ) {
         self.position = position
         self.orientation = orientation
         self.highlights = highlights
+        self.moveAnnotation = moveAnnotation
+        self.moveAnnotationDurationMs = moveAnnotationDurationMs
         self.onMove = onMove
     }
 
@@ -92,6 +98,10 @@ struct BoardView: View {
                 .frame(width: side, height: side)
 
                 pieceOverlay(cell: cell)
+                    .frame(width: side, height: side)
+                    .allowsHitTesting(false)
+
+                moveAnnotationOverlay(cell: cell)
                     .frame(width: side, height: side)
                     .allowsHitTesting(false)
             }
@@ -147,6 +157,25 @@ struct BoardView: View {
                         y: (displayRow(for: token.square) + 0.5) * cell
                     )
             }
+        }
+    }
+
+    @ViewBuilder
+    private func moveAnnotationOverlay(cell: CGFloat) -> some View {
+        if let ann = moveAnnotation {
+            let centerX = (displayCol(for: ann.square) + 0.5) * cell
+            let centerY = (displayRow(for: ann.square) + 0.5) * cell
+            let badgeSize = cell * 0.42
+            MoveQualityBadge(
+                quality: ann.quality,
+                size: badgeSize,
+                durationMs: moveAnnotationDurationMs
+            )
+            .position(
+                x: centerX + cell * 0.32,
+                y: centerY - cell * 0.32
+            )
+            .id(ann.id)
         }
     }
 
