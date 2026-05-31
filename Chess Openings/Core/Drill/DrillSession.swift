@@ -199,6 +199,39 @@ final class DrillSession {
         onMoveApplied?(move, pre, position, byUser)
     }
 
+    /// Silently replay a persisted history of `(move, byUser)` pairs from
+    /// the standard starting position. Used to restore a mid-drill session
+    /// after a relaunch. Suppresses `onMoveApplied` / `onLineComplete` so
+    /// audio sfx and confetti don't fire for moves the user already saw.
+    /// If the replayed history fills the line, the session ends in
+    /// `.lineComplete`; otherwise the user is back on the clock.
+    func restore(history persisted: [(move: Move, byUser: Bool)]) {
+        let priorMoveApplied = onMoveApplied
+        let priorLineComplete = onLineComplete
+        let priorIncorrect = onIncorrectMove
+        onMoveApplied = nil
+        onLineComplete = nil
+        onIncorrectMove = nil
+        defer {
+            onMoveApplied = priorMoveApplied
+            onLineComplete = priorLineComplete
+            onIncorrectMove = priorIncorrect
+        }
+
+        reset()
+        for (move, byUser) in persisted {
+            recordApply(move, byUser: byUser)
+        }
+        if history.count >= line.plies.count, !line.plies.isEmpty {
+            // mirror finishLine() but without re-firing onLineComplete
+            lastPromptAt = nil
+            status = .lineComplete
+        } else {
+            status = .waitingForUser
+            lastPromptAt = Date()
+        }
+    }
+
     /// Apply a move and record it in `history`/`preMovePositions`/`historyByUser`
     /// so the three arrays stay the same length. Callers must not append to
     /// `history` directly — go through this helper.

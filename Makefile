@@ -8,7 +8,7 @@ PROJECT     ?= Chess Openings.xcodeproj
 SCHEME      ?= Chess Openings
 DESTINATION ?= platform=iOS Simulator,name=iPhone 16 Pro
 
-XCB = xcodebuild -project "$(PROJECT)" -scheme "$(SCHEME)" -destination "$(DESTINATION)"
+XCB = taskpolicy -d throttle nice -n20 xcodebuild -project "$(PROJECT)" -scheme "$(SCHEME)" -destination "$(DESTINATION)"
 
 .PHONY: build test test-all clean
 

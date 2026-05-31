@@ -184,6 +184,10 @@ struct DrillView: View {
             // Force them to explicitly re-enable for the next move.
             hintShown = false
             solutionShown = false
+            // Persist the current drill snapshot so a relaunch can
+            // resume mid-drill. snapshotDrillState skips itself if a
+            // playout is active (the playout watcher owns that case).
+            snapshotDrillState()
         }
         .onChange(of: hintShown) { _, _ in
             refreshPlayoutHintIfNeeded()
@@ -441,11 +445,35 @@ struct DrillView: View {
         if let saved = persistedPlayouts.first(where: {
             $0.openingId == opening.id && $0.lineId == line.id
         }) {
-            fastForwardDrillToCompletion(s)
-            restorePlayout(from: saved)
+            switch saved.phaseKind {
+            case .playout:
+                fastForwardDrillToCompletion(s)
+                restorePlayout(from: saved)
+            case .drill:
+                restoreDrill(from: saved, into: s)
+            }
         } else if opening.side == .black {
             scheduleBlackSideAutoplay(on: s)
         }
+    }
+
+    /// Resume a previously persisted drill session by replaying its
+    /// move history into the freshly-built `DrillSession`. The session
+    /// is the one already wired up by `startSessionIfNeeded` (audio +
+    /// persistence callbacks attached), so after restore the user can
+    /// keep drilling and every new move re-snapshots normally.
+    /// No-op (and wipes the saved row) if the snapshot can't be
+    /// reconstructed against the standard starting position.
+    private func restoreDrill(
+        from saved: PersistedPlayoutState,
+        into s: DrillSession
+    ) {
+        guard let reconstructed = saved.moves.reconstruct(from: .standard) else {
+            modelContext.delete(saved)
+            try? modelContext.save()
+            return
+        }
+        s.restore(history: reconstructed)
     }
 
     /// Silently replays every book ply into the drill session via
@@ -566,6 +594,10 @@ struct DrillView: View {
         let lid = line.id
         let existing = persistedPlayouts.first { $0.openingId == oid && $0.lineId == lid }
         if let existing {
+            // a phase transition (drill → playout) reuses the row, so
+            // bump phase too — otherwise the row would still resume
+            // as a drill on next launch.
+            existing.phase = PersistedPlayoutState.Phase.playout.rawValue
             existing.startingFEN = startingFEN
             existing.userSideRaw = opening.side == .black ? "black" : "white"
             existing.engineLevel = p.level.stockfishSkill
@@ -578,7 +610,54 @@ struct DrillView: View {
                 startingFEN: startingFEN,
                 userSideRaw: opening.side == .black ? "black" : "white",
                 engineLevel: p.level.stockfishSkill,
-                movesData: data
+                movesData: data,
+                phase: .playout
+            )
+            modelContext.insert(new)
+        }
+        try? modelContext.save()
+    }
+
+    /// Persist the mid-drill snapshot for this line so a relaunch puts
+    /// the user back at the current ply. Skipped while a playout is
+    /// active (the playout snapshot is the source of truth then); if
+    /// the drill history is empty (e.g. a reset), the saved row is
+    /// deleted so the next launch lands on the opening list rather
+    /// than auto-resuming a no-op.
+    private func snapshotDrillState() {
+        // playout snapshots take precedence — they're written by the
+        // playout history watcher and supersede any drill row.
+        guard playout == nil, let s = session else { return }
+        let oid = opening.id
+        let lid = line.id
+        let existing = persistedPlayouts.first { $0.openingId == oid && $0.lineId == lid }
+        if s.history.isEmpty {
+            if let existing { modelContext.delete(existing) }
+            try? modelContext.save()
+            return
+        }
+        let stored = zip(s.history, s.historyByUser).map { (move, byUser) in
+            StoredMove(move: move, byUser: byUser)
+        }
+        let data = (try? JSONEncoder().encode(stored)) ?? Data()
+        let userSideRaw = opening.side == .black ? "black" : "white"
+        let engineLevel = settings?.engineLevel ?? 10
+        if let existing {
+            existing.phase = PersistedPlayoutState.Phase.drill.rawValue
+            existing.startingFEN = Position.standard.fen
+            existing.userSideRaw = userSideRaw
+            existing.engineLevel = engineLevel
+            existing.movesData = data
+            existing.savedAt = Date()
+        } else {
+            let new = PersistedPlayoutState(
+                openingId: oid,
+                lineId: lid,
+                startingFEN: Position.standard.fen,
+                userSideRaw: userSideRaw,
+                engineLevel: engineLevel,
+                movesData: data,
+                phase: .drill
             )
             modelContext.insert(new)
         }
