@@ -373,10 +373,20 @@ struct DrillView: View {
             let bestCp = decision?.evaluation?.clampedCp ?? 0
             let actualCp = -postEval.clampedCp
             let isWinning = bestCp >= 200
+            let isBrilliant = isBrilliantCandidate(
+                userMove: move,
+                pre: pre,
+                post: post,
+                userSide: opening.side,
+                bestUci: decision?.move.uci,
+                bestEvalCp: bestCp,
+                actualEvalCp: actualCp
+            )
             let quality = MoveQuality.classify(
                 bestEvalCp: bestCp,
                 actualEvalCp: actualCp,
-                bestEvalIsWinning: isWinning
+                bestEvalIsWinning: isWinning,
+                isBrilliantCandidate: isBrilliant
             )
             moveAnnotation = MoveAnnotation(
                 square: move.end,

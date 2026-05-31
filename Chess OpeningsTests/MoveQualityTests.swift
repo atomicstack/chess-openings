@@ -82,4 +82,45 @@ final class MoveQualityTests: XCTestCase {
                                      bestEvalIsWinning: false)
         XCTAssertEqual(q, .excellent)
     }
+
+    // brilliant category — chess.com-style sacrifice detection
+    func test_brilliant_when_candidate_and_drop_is_minimal() {
+        let q = MoveQuality.classify(
+            bestEvalCp: 50, actualEvalCp: 48,
+            bestEvalIsWinning: false,
+            isBrilliantCandidate: true
+        )
+        XCTAssertEqual(q, .brilliant)
+    }
+
+    func test_brilliant_supersedes_best_when_candidate() {
+        // exactly 0 drop with candidate flag — would be .best otherwise
+        let q = MoveQuality.classify(
+            bestEvalCp: 100, actualEvalCp: 100,
+            bestEvalIsWinning: false,
+            isBrilliantCandidate: true
+        )
+        XCTAssertEqual(q, .brilliant)
+    }
+
+    func test_brilliant_only_fires_with_low_drop() {
+        // candidate flag set but drop is too large — falls through to
+        // the standard classifier. drop=50 (100 -> 50) lands in the
+        // ..<100 bucket, so the answer is .inaccuracy.
+        let q = MoveQuality.classify(
+            bestEvalCp: 100, actualEvalCp: 50,
+            bestEvalIsWinning: false,
+            isBrilliantCandidate: true
+        )
+        XCTAssertEqual(q, .inaccuracy)
+    }
+
+    func test_brilliant_not_fired_without_candidate_flag() {
+        let q = MoveQuality.classify(
+            bestEvalCp: 50, actualEvalCp: 48,
+            bestEvalIsWinning: false,
+            isBrilliantCandidate: false
+        )
+        XCTAssertEqual(q, .best)
+    }
 }

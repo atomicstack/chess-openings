@@ -4,6 +4,7 @@ import SwiftUI
 /// Lichess/chess.com-style move-quality buckets. Reported on user
 /// moves only during engine playout.
 enum MoveQuality: Equatable, Sendable {
+    case brilliant
     case best
     case excellent
     case good
@@ -15,6 +16,7 @@ enum MoveQuality: Equatable, Sendable {
     /// SF Symbol name for the badge icon.
     var iconName: String {
         switch self {
+        case .brilliant:  return "sparkles"
         case .best:       return "checkmark.seal.fill"
         case .excellent:  return "star.fill"
         case .good:       return "checkmark.circle.fill"
@@ -27,6 +29,7 @@ enum MoveQuality: Equatable, Sendable {
 
     var color: Color {
         switch self {
+        case .brilliant:  return .cyan
         case .best:       return .green
         case .excellent:  return .mint
         case .good:       return .blue
@@ -42,12 +45,18 @@ enum MoveQuality: Equatable, Sendable {
     /// POV. `bestEvalIsWinning` is true when the engine considered the
     /// position winning for the user (≥ +200 cp or mate); when true,
     /// any drop ≥ 300 is upgraded to `.miss` instead of `.blunder`.
+    /// When `isBrilliantCandidate` is true AND the drop is small enough
+    /// to otherwise qualify as `.best`, the move is upgraded to
+    /// `.brilliant` (chess.com-style sacrifice detection — see
+    /// `MoveQualityHeuristics.swift`).
     static func classify(
         bestEvalCp: Int,
         actualEvalCp: Int,
-        bestEvalIsWinning: Bool
+        bestEvalIsWinning: Bool,
+        isBrilliantCandidate: Bool = false
     ) -> MoveQuality {
         let drop = bestEvalCp - actualEvalCp
+        if isBrilliantCandidate && drop < 5 { return .brilliant }
         if bestEvalIsWinning && drop >= 300 { return .miss }
         switch drop {
         case ..<5:    return .best
