@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		342AA28A274A77DED376ECD7 /* ChessKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0DE5732459660659D4D1EDF8 /* ChessKit */; };
+		5FB3F893AE5C2B10B6A63770 /* ChessKitEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 12A8ADF0071B5DD47C2017A7 /* ChessKitEngine */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				342AA28A274A77DED376ECD7 /* ChessKit in Frameworks */,
+				5FB3F893AE5C2B10B6A63770 /* ChessKitEngine in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,6 +120,7 @@
 			name = "Chess Openings";
 			packageProductDependencies = (
 				0DE5732459660659D4D1EDF8 /* ChessKit */,
+				12A8ADF0071B5DD47C2017A7 /* ChessKitEngine */,
 			);
 			productName = "Chess Openings";
 			productReference = C925A4B22F92DB6900D3C42E /* Chess Openings.app */;
@@ -203,6 +206,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				479B62E3565543ED2806B275 /* XCRemoteSwiftPackageReference "chesskit-swift" */,
+				B407F6EEB65C1D3B4A43D8EE /* XCRemoteSwiftPackageReference "chesskit-engine" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C925A4B32F92DB6900D3C42E /* Products */;
@@ -597,6 +601,14 @@
 				minimumVersion = 0.17.0;
 			};
 		};
+		B407F6EEB65C1D3B4A43D8EE /* XCRemoteSwiftPackageReference "chesskit-engine" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/chesskit-app/chesskit-engine";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.7.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -604,6 +616,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 479B62E3565543ED2806B275 /* XCRemoteSwiftPackageReference "chesskit-swift" */;
 			productName = ChessKit;
+		};
+		12A8ADF0071B5DD47C2017A7 /* ChessKitEngine */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B407F6EEB65C1D3B4A43D8EE /* XCRemoteSwiftPackageReference "chesskit-engine" */;
+			productName = ChessKitEngine;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
