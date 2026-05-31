@@ -63,6 +63,11 @@ struct DrillView: View {
             }
             Spacer(minLength: 0)
         }
+        .overlay(alignment: .bottomTrailing) {
+            BrainThinkingIndicator(
+                isThinking: playout?.status == .engineThinking
+            )
+        }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
