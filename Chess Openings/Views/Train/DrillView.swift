@@ -249,7 +249,7 @@ struct DrillView: View {
     }
 
     private func controlsRow(for s: DrillSession) -> some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 0) {
             Button {
                 hintShown.toggle()
                 if hintShown { solutionShown = false }
@@ -258,6 +258,7 @@ struct DrillView: View {
             }
             .tint(.green)
             .disabled(s.status == .lineComplete)
+            .frame(maxWidth: .infinity)
 
             Button {
                 solutionShown.toggle()
@@ -267,6 +268,7 @@ struct DrillView: View {
             }
             .tint(.blue)
             .disabled(s.status == .lineComplete)
+            .frame(maxWidth: .infinity)
 
             Button {
                 s.undo()
@@ -275,6 +277,7 @@ struct DrillView: View {
             }
             .tint(.orange)
             .disabled(s.history.isEmpty)
+            .frame(maxWidth: .infinity)
 
             Button {
                 s.reset()
@@ -285,6 +288,7 @@ struct DrillView: View {
                 Label("reset", systemImage: "arrow.clockwise")
             }
             .tint(.red)
+            .frame(maxWidth: .infinity)
         }
         .padding(.horizontal)
     }

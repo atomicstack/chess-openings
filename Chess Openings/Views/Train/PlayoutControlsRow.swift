@@ -10,7 +10,7 @@ struct PlayoutControlsRow: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 12) {
+            HStack(spacing: 0) {
                 Button {
                     hintShown.toggle()
                     if hintShown { solutionShown = false }
@@ -20,6 +20,7 @@ struct PlayoutControlsRow: View {
                 }
                 .tint(.green)
                 .disabled(!isLive)
+                .frame(maxWidth: .infinity)
 
                 Button {
                     solutionShown.toggle()
@@ -30,6 +31,7 @@ struct PlayoutControlsRow: View {
                 }
                 .tint(.blue)
                 .disabled(!isLive)
+                .frame(maxWidth: .infinity)
 
                 Button {
                     session.undo()
@@ -38,24 +40,28 @@ struct PlayoutControlsRow: View {
                 }
                 .tint(.orange)
                 .disabled(!isLive || session.history.isEmpty)
+                .frame(maxWidth: .infinity)
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: 0) {
                 Button(action: onOfferDraw) {
                     Label("draw", systemImage: "equal.circle")
                 }
                 .tint(.gray)
                 .disabled(!isLive)
+                .frame(maxWidth: .infinity)
 
                 Button(role: .destructive, action: onResign) {
                     Label("resign", systemImage: "flag")
                 }
                 .disabled(!isLive)
+                .frame(maxWidth: .infinity)
 
                 Button(action: onExitPlayout) {
                     Label("exit", systemImage: "xmark")
                 }
                 .tint(.gray)
+                .frame(maxWidth: .infinity)
             }
         }
         .padding(.horizontal)
