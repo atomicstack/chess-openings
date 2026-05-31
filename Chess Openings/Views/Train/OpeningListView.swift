@@ -1,12 +1,18 @@
 import SwiftUI
 import SwiftData
 
-/// Value-based navigation route used when auto-resuming a persisted
-/// playout. Wraps `Opening` + `Line` so both can be pushed onto the
-/// NavigationStack's `path` in one append.
+/// Value-based navigation routes used both for normal taps and for
+/// the auto-resume flow. UUIDs (not the @Model class instances) so
+/// the path is stable across app launches — after a relaunch the
+/// SwiftData rehydrates new in-memory objects, but the persistent
+/// ids are unchanged.
+struct OpeningRoute: Hashable {
+    let openingId: UUID
+}
+
 struct DrillRoute: Hashable {
-    let opening: Opening
-    let line: Line
+    let openingId: UUID
+    let lineId: UUID
 }
 
 struct OpeningListView: View {
@@ -20,26 +26,49 @@ struct OpeningListView: View {
             List {
                 Section("as white") {
                     ForEach(openings.filter { $0.side == .white }) { o in
-                        NavigationLink(value: o) { row(for: o) }
+                        NavigationLink(value: OpeningRoute(openingId: o.id)) {
+                            row(for: o)
+                        }
                     }
                 }
                 Section("as black") {
                     ForEach(openings.filter { $0.side == .black }) { o in
-                        NavigationLink(value: o) { row(for: o) }
+                        NavigationLink(value: OpeningRoute(openingId: o.id)) {
+                            row(for: o)
+                        }
                     }
                 }
             }
             .navigationTitle("train")
-            .navigationDestination(for: Opening.self) { o in
-                OpeningDetailView(opening: o)
+            .navigationDestination(for: OpeningRoute.self) { route in
+                if let opening = openings.first(where: { $0.id == route.openingId }) {
+                    OpeningDetailView(opening: opening)
+                } else {
+                    // SwiftData hadn't finished rehydrating when we tried
+                    // to navigate; show a spinner so we don't crash and
+                    // re-evaluate when the query updates.
+                    ProgressView()
+                }
             }
             .navigationDestination(for: DrillRoute.self) { route in
-                DrillView(opening: route.opening, line: route.line)
+                if let opening = openings.first(where: { $0.id == route.openingId }),
+                   let line = opening.lines.first(where: { $0.id == route.lineId }) {
+                    DrillView(opening: opening, line: line)
+                } else {
+                    ProgressView()
+                }
             }
         }
-        // Auto-resume a saved playout on first appearance. The latest
-        // snapshot wins if there's somehow more than one persisted row.
-        .task { autoResumeIfNeeded() }
+        // Re-evaluate whenever the queries deliver fresh results. @Query
+        // can land empty on first body evaluation and populate a tick
+        // later, so a one-shot .task + didAutoResume guard would miss
+        // the populated state.
+        .onChange(of: persistedPlayouts.count, initial: true) { _, _ in
+            autoResumeIfNeeded()
+        }
+        .onChange(of: openings.count, initial: true) { _, _ in
+            autoResumeIfNeeded()
+        }
     }
 
     private func row(for o: Opening) -> some View {
@@ -60,16 +89,30 @@ struct OpeningListView: View {
 
     private func autoResumeIfNeeded() {
         guard !didAutoResume else { return }
-        didAutoResume = true
+        // Wait for the queries to actually deliver data before we
+        // decide there's nothing to resume.
+        guard !openings.isEmpty else { return }
+        // Latest snapshot wins if there's somehow more than one row.
         let latest = persistedPlayouts
             .sorted { $0.savedAt > $1.savedAt }
             .first
-        guard let latest,
-              let opening = openings.first(where: { $0.id == latest.openingId }),
-              let line = opening.lines.first(where: { $0.id == latest.lineId }) else {
+        guard let latest else {
+            didAutoResume = true
             return
         }
-        path.append(opening)
-        path.append(DrillRoute(opening: opening, line: line))
+        guard openings.contains(where: { $0.id == latest.openingId }) else {
+            // Snapshot points at a missing opening (e.g. seed reload
+            // wiped it); clear it lazily on next app run instead of
+            // mutating from a view modifier here. Mark resume done
+            // so we don't loop.
+            didAutoResume = true
+            return
+        }
+        didAutoResume = true
+        path.append(OpeningRoute(openingId: latest.openingId))
+        path.append(DrillRoute(
+            openingId: latest.openingId,
+            lineId: latest.lineId
+        ))
     }
 }

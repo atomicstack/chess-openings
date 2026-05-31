@@ -96,6 +96,7 @@ struct DrillView: View {
                         onDeclineEngineResign: { p.declineEngineResignation() }
                     )
                     moveListRow(forPlayout: p, drill: s)
+                    Spacer()
                     PlayoutControlsRow(
                         session: p,
                         hintShown: $hintShown,
@@ -104,10 +105,13 @@ struct DrillView: View {
                         onOfferDraw: { withAnimation(.easeOut(duration: 0.18)) { pendingConfirmation = .draw } },
                         onExitPlayout: { withAnimation(.easeOut(duration: 0.18)) { pendingConfirmation = .exit } }
                     )
+                    Spacer()
                 } else {
                     promptRow(for: s)
                     moveListRow(for: s)
+                    Spacer()
                     controlsRow(for: s)
+                    Spacer()
                 }
             } else {
                 ProgressView()
@@ -290,7 +294,7 @@ struct DrillView: View {
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
         }
-        .frame(maxHeight: .infinity, alignment: .top)
+        .frame(maxHeight: 160, alignment: .top)
         .padding(.horizontal)
     }
 
@@ -322,7 +326,7 @@ struct DrillView: View {
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
         }
-        .frame(maxHeight: .infinity, alignment: .top)
+        .frame(maxHeight: 160, alignment: .top)
         .padding(.horizontal)
     }
 
