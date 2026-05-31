@@ -22,18 +22,42 @@ struct DrillView: View {
         VStack(spacing: 12) {
             if let s = session {
                 BoardView(
-                    position: s.position,
+                    position: playout?.position ?? s.position,
                     orientation: opening.side,
                     highlights: boardHighlights(for: s),
                     onMove: { move in
-                        Task { await s.submit(move) }
+                        if let p = playout {
+                            Task { await p.submit(move) }
+                        } else {
+                            Task { await s.submit(move) }
+                        }
                     }
                 )
                 .padding(.horizontal)
 
-                promptRow(for: s)
-                moveListRow(for: s)
-                controlsRow(for: s)
+                if let p = playout {
+                    PlayoutPromptRow(
+                        session: p,
+                        onAcceptEngineResign: { p.acceptEngineResignation() },
+                        onDeclineEngineResign: { p.declineEngineResignation() }
+                    )
+                    moveListRow(forPlayout: p, drill: s)
+                    PlayoutControlsRow(
+                        session: p,
+                        hintShown: $hintShown,
+                        solutionShown: $solutionShown,
+                        onResign: { p.resign() },
+                        onOfferDraw: { Task { await p.offerDraw() } },
+                        onExitPlayout: {
+                            playout = nil
+                            Task { await engineService?.shutdown() }
+                        }
+                    )
+                } else {
+                    promptRow(for: s)
+                    moveListRow(for: s)
+                    controlsRow(for: s)
+                }
             } else {
                 ProgressView()
             }
@@ -150,6 +174,35 @@ struct DrillView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Text(progressLabel(for: s))
+                .font(.caption.monospaced())
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal)
+    }
+
+    /// Renders the drill's opening trail (in secondary) followed by
+    /// the playout's continuation (in primary), as one continuous
+    /// move list. Right-hand label is "move N" where N is the
+    /// full-move count.
+    private func moveListRow(
+        forPlayout p: EnginePlayoutSession,
+        drill s: DrillSession
+    ) -> some View {
+        let drillCount = s.history.count
+        let combinedMoves = s.history + p.history
+        let combinedPres = s.preMovePositions + p.preMovePositions
+        return HStack(alignment: .top, spacing: 8) {
+            FlowLayout(horizontalSpacing: 6, verticalSpacing: 4) {
+                ForEach(Array(combinedMoves.enumerated()), id: \.offset) { i, move in
+                    let pre = i < combinedPres.count ? combinedPres[i] : Position.standard
+                    let san = SanCodec.format(move, in: pre)
+                    Text(sanLabel(ply: i, san: san))
+                        .font(.caption.monospaced())
+                        .foregroundStyle(i < drillCount ? .secondary : .primary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Text("move \(combinedMoves.count / 2 + 1)")
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
         }
