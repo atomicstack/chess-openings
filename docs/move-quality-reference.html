@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>move quality reference — chess openings</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    /* chess.com analysis palette (eyeballed from screenshots) */
+    --cc-brilliant:  #1ba1a1;  /* teal !! */
+    --cc-great:      #5b8baf;  /* blue ! */
+    --cc-best:       #95bb4a;  /* green star */
+    --cc-excellent:  #95bb4a;  /* green thumb (same green) */
+    --cc-good:       #95af80;  /* muted desaturated green */
+    --cc-book:       #a88865;  /* tan/beige book */
+    --cc-inaccuracy: #f7c245;  /* yellow ?! */
+    --cc-mistake:    #ffa459;  /* orange ? */
+    --cc-miss:       #ff7769;  /* coral / light red x */
+    --cc-blunder:    #fa412d;  /* red ?? */
+
+    --bg:        #312e2b;  /* chess.com dark bg */
+    --row-bg:    transparent;
+    --ink:       #f4f4f5;
+    --ink-dim:   #b8b6b3;
+    --hair:      #3d3a37;
+    --panel-bg:  #262422;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text",
+                    "Segoe UI", system-ui, sans-serif;
+  }
+  header {
+    padding: 36px 28px 18px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    font-weight: 700;
+  }
+  header p {
+    margin: 0;
+    color: var(--ink-dim);
+    max-width: 720px;
+    font-size: 14.5px;
+  }
+
+  main {
+    padding: 6px 28px 64px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* ====== chess.com style list ====== */
+  .cc-list {
+    background: var(--panel-bg);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin: 18px 0 28px;
+  }
+  .cc-list h2 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .cc-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 0;
+  }
+  .cc-badge {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.05em;
+  }
+  /* per-glyph sizing — user-tuned to read evenly across the legend */
+  .cc-badge.glyph-bang2     { font-size: 24px; letter-spacing: -0.06em; } /* blunder ?? */
+  .cc-badge.glyph-bang2-big { font-size: 25px; letter-spacing: -0.06em; } /* brilliant !! */
+  .cc-badge.glyph-bang1     { font-size: 25px; letter-spacing: 0; }       /* great ! and mistake ? */
+  .cc-badge.glyph-bangq     { font-size: 23px; letter-spacing: -0.04em; } /* ?! */
+  .cc-badge.glyph-star      { font-size: 24px; letter-spacing: 0; }
+  .cc-badge.glyph-check     { font-size: 24px; letter-spacing: 0; }
+  .cc-badge.glyph-book      { font-size: 24px; letter-spacing: 0; }
+  /* inline svg badges (excellent thumb, miss X) — render as flat white */
+  .cc-badge svg.glyph-svg   { width: 24px; height: 24px; fill: #fff; }
+  .cc-badge svg.glyph-x-svg { width: 22px; height: 22px; stroke: #fff;
+                              fill: none; stroke-width: 4.5;
+                              stroke-linecap: round; }
+  .cc-name {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-transform: capitalize;
+  }
+  .cc-row.brilliant  .cc-badge { background: var(--cc-brilliant); }
+  .cc-row.brilliant  .cc-name  { color: var(--cc-brilliant); }
+  .cc-row.great      .cc-badge { background: var(--cc-great); }
+  .cc-row.great      .cc-name  { color: var(--cc-great); }
+  .cc-row.best       .cc-badge { background: var(--cc-best); }
+  .cc-row.best       .cc-name  { color: var(--cc-best); }
+  .cc-row.excellent  .cc-badge { background: var(--cc-excellent); }
+  .cc-row.excellent  .cc-name  { color: var(--cc-excellent); }
+  .cc-row.good       .cc-badge { background: var(--cc-good); }
+  .cc-row.good       .cc-name  { color: var(--cc-good); }
+  .cc-row.book       .cc-badge { background: var(--cc-book); }
+  .cc-row.book       .cc-name  { color: var(--cc-book); }
+  .cc-row.inaccuracy .cc-badge { background: var(--cc-inaccuracy); }
+  .cc-row.inaccuracy .cc-name  { color: var(--cc-inaccuracy); }
+  .cc-row.mistake    .cc-badge { background: var(--cc-mistake); }
+  .cc-row.mistake    .cc-name  { color: var(--cc-mistake); }
+  .cc-row.miss       .cc-badge { background: var(--cc-miss); }
+  .cc-row.miss       .cc-name  { color: var(--cc-miss); }
+  .cc-row.blunder    .cc-badge { background: var(--cc-blunder); }
+  .cc-row.blunder    .cc-name  { color: var(--cc-blunder); }
+
+  /* ====== mapping section ====== */
+  h2.section {
+    color: var(--ink);
+    margin: 22px 0 10px;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: var(--panel-bg);
+    border: 1px solid var(--hair);
+    border-radius: 14px;
+    padding: 16px 18px 16px;
+  }
+  .card .head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .card .head .cc-badge {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    font-size: 16px;
+  }
+  .card .head .name {
+    font-size: 18px;
+    font-weight: 700;
+    text-transform: lowercase;
+    letter-spacing: -0.01em;
+  }
+  .card .head .miss-pill {
+    margin-left: auto;
+    background: #44403c;
+    color: var(--ink-dim);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 5px;
+  }
+  .card .meta {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--ink-dim);
+    margin: 0 0 12px;
+    line-height: 1.6;
+  }
+  .card .meta b { color: var(--ink); font-weight: 600; }
+  .card .desc {
+    font-size: 13.5px;
+    line-height: 1.5;
+    margin: 0;
+    color: var(--ink);
+  }
+
+  /* ====== thresholds table ====== */
+  .thresholds {
+    background: var(--panel-bg);
+    border: 1px solid var(--hair);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-top: 18px;
+  }
+  .thresholds h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+  }
+  .thresholds table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  .thresholds th, .thresholds td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--hair);
+    font-size: 13.5px;
+  }
+  .thresholds tr:last-child td { border-bottom: 0; }
+  .thresholds th {
+    color: var(--ink-dim);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+  }
+  .thresholds td.cp {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  }
+  .note {
+    color: var(--ink-dim);
+    font-size: 12.5px;
+    margin: 10px 0 0;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>move quality reference</h1>
+  <p>
+    chess.com style on top, mapped to what the chess-openings app
+    currently ships below it. the bigger row at top mimics chess.com's
+    analysis legend so you can eyeball the colour scheme; each card
+    below it shows the in-app glyph + SwiftUI <code>Color</code> and
+    whether the category actually exists in <code>MoveQuality</code>.
+  </p>
+</header>
+
+<main>
+
+  <!-- ====================== chess.com legend ====================== -->
+  <section class="cc-list">
+    <h2>chess.com legend (10 categories)</h2>
+
+    <div class="cc-row brilliant">
+      <div class="cc-badge glyph-bang2-big">!!</div>
+      <div class="cc-name">Brilliant</div>
+    </div>
+    <div class="cc-row great">
+      <div class="cc-badge glyph-bang1">!</div>
+      <div class="cc-name">Great Move</div>
+    </div>
+    <div class="cc-row best">
+      <div class="cc-badge glyph-star">★</div>
+      <div class="cc-name">Best Move</div>
+    </div>
+    <div class="cc-row excellent">
+      <div class="cc-badge">
+        <svg class="glyph-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M2 20h3V9H2v11zm17.5-11h-5.04l.8-3.8c.07-.34.03-.7-.14-1L14.5 2.6 9.06 8.03c-.36.36-.56.85-.56 1.36V18c0 1.1.9 2 2 2h7.49c.83 0 1.54-.5 1.84-1.22l2.45-5.71c.12-.27.18-.55.18-.84V11c0-1.1-.9-2-2-2z"/>
+        </svg>
+      </div>
+      <div class="cc-name">Excellent</div>
+    </div>
+    <div class="cc-row good">
+      <div class="cc-badge glyph-check">✓</div>
+      <div class="cc-name">Good</div>
+    </div>
+    <div class="cc-row book">
+      <div class="cc-badge glyph-book">📖</div>
+      <div class="cc-name">Book</div>
+    </div>
+    <div class="cc-row inaccuracy">
+      <div class="cc-badge glyph-bangq">?!</div>
+      <div class="cc-name">Inaccuracy</div>
+    </div>
+    <div class="cc-row mistake">
+      <div class="cc-badge glyph-bang1">?</div>
+      <div class="cc-name">Mistake</div>
+    </div>
+    <div class="cc-row miss">
+      <div class="cc-badge">
+        <svg class="glyph-x-svg" viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="6" y1="6" x2="18" y2="18"/>
+          <line x1="18" y1="6" x2="6" y2="18"/>
+        </svg>
+      </div>
+      <div class="cc-name">Miss</div>
+    </div>
+    <div class="cc-row blunder">
+      <div class="cc-badge glyph-bang2">??</div>
+      <div class="cc-name">Blunder</div>
+    </div>
+  </section>
+
+  <!-- ====================== in-app mapping ====================== -->
+  <h2 class="section">in-app mapping (what your build does today)</h2>
+
+  <section class="grid">
+
+    <article class="card">
+      <div class="head">
+        <div class="cc-badge glyph-bang2-big" style="background: var(--cc-brilliant)">!!</div>
+        <div class="name">brilliant</div>
+      </div>
+      <p class="meta">
+        sf symbol: <b>sparkles</b><br>
+        swiftui color: <b>.cyan</b> (#32ade6)
+      </p>
+      <p class="desc">
+        chess.com-style sacrifice. user played best AND gave up material
+        to a lower-value attacker, AND wasn't already crushing, AND the
+        position is still ≥ 0 cp. rare by design.
+      </p>
+    </article>
+
+    <article class="card">
+      <div class="head">
+        <div class="cc-badge glyph-bang1" style="background: var(--cc-great)">!</div>
+        <div class="name">great move</div>
+        <span class="miss-pill">not in app</span>
+      </div>
+      <p class="meta">
+        chess.com only — slot for "the only correct move" / a strong
+        non-sacrifice that's clearly best in a tactical position.
+      </p>
+      <p class="desc">
+        would sit between brilliant and best. could be added by
+        flagging "best move in a contested position where most moves
+        drop ≥ 100 cp" — needs a multi-pv query to detect.
+      </p>
+    </article>
+
+    <article class="card">
+      <div class="head">
+        <div class="cc-badge glyph-star" style="background: var(--cc-best)">★</div>
+        <div class="name">best</div>
+      </div>
+      <p class="meta">
+        sf symbol: <b>checkmark.seal.fill</b><br>
+        swiftui color: <b>.green</b> (#34c759)
+      </p>
+      <p class="desc">
+        user's move matches the engine's preferred line (centipawn
+        drop &lt; 5). no sacrifice context.
+      </p>
+    </article>
+
+    <article class="card">
+      <div class="head">
+        <div class="cc-badge" style="background: var(--cc-excellent)">
+          <svg class="glyph-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M2 20h3V9H2v11zm17.5-11h-5.04l.8-3.8c.07-.34.03-.7-.14-1L14.5 2.6 9.06 8.03c-.36.36-.56.85-.56 1.36V18c0 1.1.9 2 2 2h7.49c.83 0 1.54-.5 1.84-1.22l2.45-5.71c.12-.27.18-.55.18-.84V11c0-1.1-.9-2-2-2z"/>
+          </svg>
+        </div>
+        <div class="name">excellent</div>
+      </div>
+      <p class="meta">
+        sf symbol: <b>star.fill</b><br>
+        swiftui color: <b>.mint</b> (#00c7be)
+      </p>
+      <p class="desc">
+        within 20 cp of best. tactically sound, just not the engine's
+        pick.
+      </p>
+    </article>
+
+    <article class="card">
+      <div class="head">
+        <div class="cc-badge glyph-check" style="background: var(--cc-good)">✓</div>
+        <div class="name">good</div>
+      </div>
+      <p class="meta">
+        sf symbol: <b>checkmark.circle.fill</b><br>
+        swiftui color: <b>.blue</b> (#007aff)
+      </p>
+      <p class="desc">
+        within 50 cp of best. fine choice, no meaningful damage to your
+        position.
+      </p>
+    </article>
+
+    <article class="card">
+      <div class="head">
+        <div class="cc-badge glyph-book" style="background: var(--cc-book)">📖</div>
+        <div class="name">book</div>
+        <span class="miss-pill">not in app</span>
+      </div>
+      <p class="meta">
+        chess.com only — known opening-theory move.
+      </p>
+      <p class="desc">
+        not meaningful in playout mode (which starts AFTER the drill
+        line is finished, so by definition you're past book). skip
+        unless we add it to drill mode.
+      </p>
+    </article>
+
+    <article class="card">
+      <div class="head">
+        <div class="cc-badge glyph-bangq" style="background: var(--cc-inaccuracy)">?!</div>
+        <div class="name">inaccuracy</div>
+      </div>
+      <p class="meta">
+        sf symbol: <b>questionmark.circle.fill</b><br>
+        swiftui color: <b>.yellow</b> (#ffcc00)
+      </p>
+      <p class="desc">
+        drop of 50–99 cp. roughly half a pawn of evaluation gifted to
+        the engine.
+      </p>
+    </article>
+
+    <article class="card">
+      <div class="head">
+        <div class="cc-badge glyph-bang1" style="background: var(--cc-mistake)">?</div>
+        <div class="name">mistake</div>
+      </div>
+      <p class="meta">
+        sf symbol: <b>exclamationmark.circle.fill</b><br>
+        swiftui color: <b>.orange</b> (#ff9500)
+      </p>
+      <p class="desc">
+        drop of 100–299 cp. one to three pawns of evaluation lost.
+      </p>
+    </article>
+
+    <article class="card">
+      <div class="head">
+        <div class="cc-badge" style="background: var(--cc-miss)">
+          <svg class="glyph-x-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="6" y1="6" x2="18" y2="18"/>
+            <line x1="18" y1="6" x2="6" y2="18"/>
+          </svg>
+        </div>
+        <div class="name">miss</div>
+      </div>
+      <p class="meta">
+        sf symbol: <b>eye.slash.fill</b> &nbsp;
+        <span style="color: var(--cc-miss)">← the "purple eye"</span><br>
+        swiftui color: <b>.purple</b> (#af52de)
+      </p>
+      <p class="desc">
+        you were already winning (engine eval ≥ +200 cp or a mate
+        was on the board) and squandered it with a 300+ cp drop.
+        distinct from blunder — a blunder gives away a balanced
+        position, a miss throws away a won one.
+      </p>
+    </article>
+
+    <article class="card">
+      <div class="head">
+        <div class="cc-badge glyph-bang2" style="background: var(--cc-blunder)">??</div>
+        <div class="name">blunder</div>
+      </div>
+      <p class="meta">
+        sf symbol: <b>xmark.circle.fill</b><br>
+        swiftui color: <b>.red</b> (#ff3b30)
+      </p>
+      <p class="desc">
+        drop of 300+ cp from a non-winning position. game-changing bad.
+      </p>
+    </article>
+
+  </section>
+
+  <!-- ====================== thresholds ====================== -->
+  <div class="thresholds">
+    <h3>classification thresholds (in-app)</h3>
+    <table>
+      <thead>
+        <tr><th>quality</th><th>centipawn drop</th><th>extra criteria</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>brilliant</td>  <td class="cp">&lt; 5</td>       <td>sacrifice candidate + not already winning + still ≥ 0 cp</td></tr>
+        <tr><td>best</td>       <td class="cp">&lt; 5</td>       <td>—</td></tr>
+        <tr><td>excellent</td>  <td class="cp">5 – 19</td>       <td>—</td></tr>
+        <tr><td>good</td>       <td class="cp">20 – 49</td>      <td>—</td></tr>
+        <tr><td>inaccuracy</td> <td class="cp">50 – 99</td>      <td>—</td></tr>
+        <tr><td>mistake</td>    <td class="cp">100 – 299</td>    <td>—</td></tr>
+        <tr><td>blunder</td>    <td class="cp">300+</td>         <td>position wasn't already winning</td></tr>
+        <tr><td>miss</td>       <td class="cp">300+</td>         <td>position WAS already winning (≥ +200 cp or mate)</td></tr>
+      </tbody>
+    </table>
+    <p class="note">
+      "drop" = engine's best-move eval minus the eval after your actual
+      move, both from your point of view. mate scores clamp to ±5000 cp.
+    </p>
+  </div>
+
+</main>
+</body>
+</html>
