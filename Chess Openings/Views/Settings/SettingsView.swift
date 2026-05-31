@@ -36,6 +36,22 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                Section("move quality") {
+                    Stepper(
+                        "analysis depth: \(currentMoveAnalysisDepth())",
+                        value: bindingMoveAnalysisDepth(),
+                        in: 6...20
+                    )
+                    Stepper(
+                        "badge duration: \(currentMoveQualityBadgeMs()) ms",
+                        value: bindingMoveQualityBadgeMs(),
+                        in: 500...5000,
+                        step: 100
+                    )
+                    Text("how deep stockfish searches when grading your moves, and how long the move-quality badge stays on the board.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
                 Section("data") {
                     Button("reset all progress", role: .destructive) { resetProgress() }
                 }
@@ -70,6 +86,29 @@ struct SettingsView: View {
             get: { Double(self.current().engineLevel) },
             set: {
                 self.current().engineLevel = max(0, min(20, Int($0.rounded())))
+                try? context.save()
+            }
+        )
+    }
+
+    private func currentMoveAnalysisDepth() -> Int { current().moveAnalysisDepth }
+    private func currentMoveQualityBadgeMs() -> Int { current().moveQualityBadgeMs }
+
+    private func bindingMoveAnalysisDepth() -> Binding<Int> {
+        Binding(
+            get: { self.current().moveAnalysisDepth },
+            set: {
+                self.current().moveAnalysisDepth = max(6, min(20, $0))
+                try? context.save()
+            }
+        )
+    }
+
+    private func bindingMoveQualityBadgeMs() -> Binding<Int> {
+        Binding(
+            get: { self.current().moveQualityBadgeMs },
+            set: {
+                self.current().moveQualityBadgeMs = max(500, min(5000, $0))
                 try? context.save()
             }
         )

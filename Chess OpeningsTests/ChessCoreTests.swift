@@ -121,4 +121,24 @@ final class ChessCoreTests: XCTestCase {
         let t = UserSettings(engineLevel: -5)
         XCTAssertEqual(t.engineLevel, 0)
     }
+
+    func test_user_settings_default_move_analysis_depth_is_ten() {
+        let s = UserSettings()
+        XCTAssertEqual(s.moveAnalysisDepth, 10)
+    }
+
+    func test_user_settings_clamps_move_analysis_depth_into_6_through_20() {
+        XCTAssertEqual(UserSettings(moveAnalysisDepth: 0).moveAnalysisDepth, 6)
+        XCTAssertEqual(UserSettings(moveAnalysisDepth: 99).moveAnalysisDepth, 20)
+    }
+
+    func test_user_settings_default_badge_ms_is_fifteen_hundred() {
+        let s = UserSettings()
+        XCTAssertEqual(s.moveQualityBadgeMs, 1500)
+    }
+
+    func test_user_settings_clamps_badge_ms_into_500_through_5000() {
+        XCTAssertEqual(UserSettings(moveQualityBadgeMs: 100).moveQualityBadgeMs, 500)
+        XCTAssertEqual(UserSettings(moveQualityBadgeMs: 10_000).moveQualityBadgeMs, 5000)
+    }
 }
