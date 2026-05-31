@@ -435,6 +435,13 @@ struct DrillView: View {
             playoutHint = nil
             return
         }
+        // hints only make sense while the user is on the clock —
+        // not mid-engine-think, not at game end, not while a draw
+        // modal is up.
+        guard p.status == .waitingForUser else {
+            playoutHint = nil
+            return
+        }
         guard let svc = engineService else { return }
         let pos = p.position
         Task {
@@ -443,6 +450,12 @@ struct DrillView: View {
                 skill: 20,
                 budget: .depth(12)
             )
+            // discard the result if the position changed underneath
+            // (user moved, or playout was exited) — a fresh refresh
+            // task is already in flight for the new position.
+            guard let current = playout, current.position == pos else {
+                return
+            }
             playoutHint = decision?.move
         }
     }
