@@ -19,6 +19,47 @@ struct DrillView: View {
     @State private var wasLearnedAtSessionStart: Bool = false
     @State private var confettiTrigger: Date?
     @State private var moveAnnotation: MoveAnnotation?
+    @State private var pendingConfirmation: PlayoutConfirmation?
+
+    /// Which match-management action is awaiting user confirmation.
+    /// `nil` when no modal is up.
+    enum PlayoutConfirmation: Identifiable {
+        case draw, resign, exit
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .draw:   return "offer a draw?"
+            case .resign: return "resign the game?"
+            case .exit:   return "exit playout?"
+            }
+        }
+
+        var message: String {
+            switch self {
+            case .draw:   return "stockfish will accept if the position is roughly equal, otherwise the game continues."
+            case .resign: return "stockfish takes the win immediately and this game ends."
+            case .exit:   return "your current game will end."
+            }
+        }
+
+        var confirmLabel: String {
+            switch self {
+            case .draw:   return "offer"
+            case .resign: return "resign"
+            case .exit:   return "exit"
+            }
+        }
+
+        var confirmRole: ButtonRole? {
+            switch self {
+            case .draw:   return nil
+            case .resign: return .destructive
+            case .exit:   return .destructive
+            }
+        }
+    }
 
     private var settings: UserSettings? { settingsList.first }
 
@@ -52,13 +93,9 @@ struct DrillView: View {
                         session: p,
                         hintShown: $hintShown,
                         solutionShown: $solutionShown,
-                        onResign: { p.resign() },
-                        onOfferDraw: { Task { await p.offerDraw() } },
-                        onExitPlayout: {
-                            playout = nil
-                            moveAnnotation = nil
-                            Task { await engineService?.shutdown() }
-                        }
+                        onResign: { withAnimation(.easeOut(duration: 0.18)) { pendingConfirmation = .resign } },
+                        onOfferDraw: { withAnimation(.easeOut(duration: 0.18)) { pendingConfirmation = .draw } },
+                        onExitPlayout: { withAnimation(.easeOut(duration: 0.18)) { pendingConfirmation = .exit } }
                     )
                 } else {
                     promptRow(for: s)
@@ -78,6 +115,27 @@ struct DrillView: View {
         .overlay {
             ConfettiBurst(trigger: confettiTrigger)
                 .allowsHitTesting(false)
+        }
+        .overlay {
+            if let confirmation = pendingConfirmation {
+                ConfirmationModal(
+                    title: confirmation.title,
+                    message: confirmation.message,
+                    confirmLabel: confirmation.confirmLabel,
+                    confirmRole: confirmation.confirmRole,
+                    onConfirm: {
+                        executePendingConfirmation(confirmation)
+                        withAnimation(.easeIn(duration: 0.14)) {
+                            pendingConfirmation = nil
+                        }
+                    },
+                    onCancel: {
+                        withAnimation(.easeIn(duration: 0.14)) {
+                            pendingConfirmation = nil
+                        }
+                    }
+                )
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
@@ -349,6 +407,21 @@ struct DrillView: View {
     /// `EnginePlayoutSession` from the drill's final position + the
     /// user's side + chosen difficulty, reuses the existing
     /// `AudioService` for engine moves, and triggers bootstrap so
+    /// Run the action the user just confirmed via the modal.
+    private func executePendingConfirmation(_ kind: PlayoutConfirmation) {
+        guard let p = playout else { return }
+        switch kind {
+        case .draw:
+            Task { await p.offerDraw() }
+        case .resign:
+            p.resign()
+        case .exit:
+            playout = nil
+            moveAnnotation = nil
+            Task { await engineService?.shutdown() }
+        }
+    }
+
     /// engine-first openings (user-as-black) play white's first move
     /// immediately. The playout's own ui rendering ships in tasks
     /// 14-16; for now the state lives in `@State playout`.

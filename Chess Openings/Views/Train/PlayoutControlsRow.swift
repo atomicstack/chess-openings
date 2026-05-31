@@ -9,7 +9,7 @@ struct PlayoutControlsRow: View {
     let onExitPlayout: () -> Void
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 18) {
             HStack(spacing: 0) {
                 Button {
                     hintShown.toggle()
