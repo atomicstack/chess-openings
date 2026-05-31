@@ -48,6 +48,14 @@ reply and given a chance to retry (show-and-retry mode).
   waiting on your reply.
 - **rolling mistake log**: the last 20 mistakes per line are kept for
   future review features.
+- **play it out**: when a line is finished you can optionally play out
+  the rest of the position against a built-in stockfish (via
+  chesskit-engine). pick a difficulty in settings (0 = very weak, 20 =
+  full strength). during play you can ask for a hint (source square
+  only), reveal the best move (source + destination), undo, offer a
+  draw, or resign. a small brain icon pulses in the bottom-right corner
+  while stockfish is thinking. stockfish is gpl-v3; the full license is
+  bundled at `Chess Openings/Resources/Stockfish/LICENSE-stockfish.txt`.
 
 ## architecture
 
