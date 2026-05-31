@@ -114,6 +114,11 @@ struct DrillView: View {
             refreshPlayoutHintIfNeeded()
         }
         .onChange(of: playout?.history.count ?? 0) { _, _ in
+            // Mirror drill behaviour: a new move invalidates whatever
+            // hint/solution was visible. User must re-enable to see
+            // the hint for the next position.
+            hintShown = false
+            solutionShown = false
             refreshPlayoutHintIfNeeded()
         }
     }
