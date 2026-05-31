@@ -200,7 +200,19 @@ final class EnginePlayoutSession {
 
     private func apply(_ move: Move, byUser: Bool) {
         let pre = position
-        board.move(pieceAt: move.start, to: move.end)
+        // chesskit's `board.move(pieceAt:to:)` only HALF-applies a
+        // promotion: the position toggles side-to-move and the pawn
+        // moves to the final rank, but `board.state` parks at
+        // `.promotion(_)` and the piece isn't yet a queen/knight/etc.
+        // If the incoming Move carries the user's promotion choice,
+        // commit it via completePromotion so the board ends in a
+        // playable state and submit() doesn't early-return.
+        let pending = board.move(pieceAt: move.start, to: move.end)
+        if case .promotion = board.state,
+           let pending,
+           let promo = move.promotedPiece {
+            _ = board.completePromotion(of: pending, to: promo.kind)
+        }
         position = board.position
         onMoveApplied?(move, pre, position, byUser)
     }
@@ -263,10 +275,17 @@ final class EnginePlayoutSession {
 
     /// chesskit's `Board` doesn't support undo, so we rebuild it by
     /// replaying `history` from the session's starting position.
+    /// Promotion moves require the same two-step apply (move →
+    /// completePromotion) used in `apply(_:byUser:)`.
     private func rebuildBoardFromHistory(from start: Position) {
         var replay = Board(position: start)
         for move in history {
-            replay.move(pieceAt: move.start, to: move.end)
+            let pending = replay.move(pieceAt: move.start, to: move.end)
+            if case .promotion = replay.state,
+               let pending,
+               let promo = move.promotedPiece {
+                _ = replay.completePromotion(of: pending, to: promo.kind)
+            }
         }
         board = replay
         position = board.position

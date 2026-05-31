@@ -182,7 +182,19 @@ final class DrillSession {
 
     private func apply(_ move: Move, byUser: Bool) {
         let pre = position
-        board.move(pieceAt: move.start, to: move.end)
+        // chesskit's promotion mechanic is two-step: `move(pieceAt:to:)`
+        // half-applies a promotion (pawn on final rank, side-to-move
+        // toggled) and parks `board.state` at `.promotion(_)`.
+        // `completePromotion` commits the user's piece choice. If we
+        // skip this here, the board jams and any caller that consults
+        // `board.state` for termination/promotion will read an
+        // inconsistent state.
+        let pending = board.move(pieceAt: move.start, to: move.end)
+        if case .promotion = board.state,
+           let pending,
+           let promo = move.promotedPiece {
+            _ = board.completePromotion(of: pending, to: promo.kind)
+        }
         position = board.position
         onMoveApplied?(move, pre, position, byUser)
     }
@@ -273,10 +285,17 @@ final class DrillSession {
 
     /// chesskit's `Board` does not support undo, so we rebuild it
     /// by replaying `history` from the standard starting position.
+    /// Promotion moves require the same two-step apply (move →
+    /// completePromotion) used in `apply(_:byUser:)`.
     private func rebuildBoardFromHistory() {
         var replay = Board(position: .standard)
         for move in history {
-            replay.move(pieceAt: move.start, to: move.end)
+            let pending = replay.move(pieceAt: move.start, to: move.end)
+            if case .promotion = replay.state,
+               let pending,
+               let promo = move.promotedPiece {
+                _ = replay.completePromotion(of: pending, to: promo.kind)
+            }
         }
         board = replay
         position = board.position
