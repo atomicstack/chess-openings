@@ -9,7 +9,7 @@ final class UserSettings {
     var seededVersion: Int = 0
     var engineLevel: Int = 10
     var moveAnalysisDepth: Int = 10
-    var moveQualityBadgeMs: Int = 1500
+    var moveQualityBadgeMs: Int = 1750
 
     var drillMode: DrillMode {
         get { DrillMode(rawValue: drillModeRaw) ?? .strict }
@@ -23,7 +23,7 @@ final class UserSettings {
         seededVersion: Int = 0,
         engineLevel: Int = 10,
         moveAnalysisDepth: Int = 10,
-        moveQualityBadgeMs: Int = 1500
+        moveQualityBadgeMs: Int = 1750
     ) {
         self.drillModeRaw = drillMode.rawValue
         self.masteryThreshold = masteryThreshold

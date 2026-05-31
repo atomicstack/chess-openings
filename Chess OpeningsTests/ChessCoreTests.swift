@@ -132,9 +132,9 @@ final class ChessCoreTests: XCTestCase {
         XCTAssertEqual(UserSettings(moveAnalysisDepth: 99).moveAnalysisDepth, 20)
     }
 
-    func test_user_settings_default_badge_ms_is_fifteen_hundred() {
+    func test_user_settings_default_badge_ms_is_seventeen_fifty() {
         let s = UserSettings()
-        XCTAssertEqual(s.moveQualityBadgeMs, 1500)
+        XCTAssertEqual(s.moveQualityBadgeMs, 1750)
     }
 
     func test_user_settings_clamps_badge_ms_into_500_through_5000() {

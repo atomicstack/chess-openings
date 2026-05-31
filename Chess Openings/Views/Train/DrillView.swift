@@ -504,6 +504,13 @@ struct DrillView: View {
                 quality: quality,
                 id: Date()
             )
+            // Give the badge ~250 ms of breathing room before the
+            // session continues into playEngineReply — the analyser
+            // is awaited inline by submit() so this sleep delays the
+            // engine's response by the same amount, making the badge
+            // legible instead of being immediately overwritten by the
+            // engine's move animation.
+            try? await Task.sleep(for: .milliseconds(250))
         }
         moveAnnotation = nil
         precomputeTask = nil
