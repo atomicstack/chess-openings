@@ -16,13 +16,13 @@ final class EngineSmokeTests: XCTestCase {
             "set RUN_ENGINE_INTEGRATION=1 to run the stockfish smoke test"
         )
         let service = EngineService()
-        let move = await service.bestMove(
+        let decision = await service.bestMove(
             at: .standard,
             skill: 20,
             budget: .movetimeMs(300)
         )
-        let m = try XCTUnwrap(move, "engine returned no bestmove")
-        XCTAssertGreaterThanOrEqual(m.uci.count, 4,
+        let d = try XCTUnwrap(decision, "engine returned no bestmove")
+        XCTAssertGreaterThanOrEqual(d.move.uci.count, 4,
                                     "uci move must be 4 chars (or 5 with promo)")
         await service.shutdown()
     }

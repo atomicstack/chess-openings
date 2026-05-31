@@ -10,11 +10,20 @@ final class EngineServicingFakeTests: XCTestCase {
         let m1 = await fake.bestMove(
             at: .standard, skill: 10, budget: .depth(8)
         )
-        XCTAssertEqual(m1?.uci, "e2e4")
+        XCTAssertEqual(m1?.move.uci, "e2e4")
         let m2 = await fake.bestMove(
             at: .standard, skill: 10, budget: .depth(8)
         )
-        XCTAssertEqual(m2?.uci, "g1f3")
+        XCTAssertEqual(m2?.move.uci, "g1f3")
+    }
+
+    func test_fake_returns_scripted_decision_pair() async throws {
+        let fake = FakeEngineService()
+        fake.scriptedBestMoves = ["e2e4"]
+        fake.scriptedEvaluations = [.cp(25)]
+        let d = await fake.bestMove(at: .standard, skill: 10, budget: .depth(8))
+        XCTAssertEqual(d?.move.uci, "e2e4")
+        XCTAssertEqual(d?.evaluation, .cp(25))
     }
 
     func test_fake_returns_scripted_evaluation() async throws {

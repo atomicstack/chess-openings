@@ -93,17 +93,18 @@ final class EnginePlayoutSession {
         // called from submit() while .waitingForUser; defensive on
         // bootstrap entry where status is already .engineThinking.
         status = .engineThinking
-        let move = await engine.bestMove(
+        let decision = await engine.bestMove(
             at: position,
             skill: level.stockfishSkill,
             budget: level.opponentSearchBudget
         )
-        guard let move,
-              let parsed = parseUCI(move.uci, in: position) else {
+        guard let decision,
+              let parsed = parseUCI(decision.move.uci, in: position) else {
             status = .waitingForUser
             return
         }
         recordApply(parsed, byUser: false)
+        lastEngineEval = decision.evaluation
         if let reason = Self.reason(forBoardState: board.state) {
             status = .gameOver(reason)
             return

@@ -18,11 +18,15 @@ final class FakeEngineService: EngineServicing {
         at position: Position,
         skill: Int,
         budget: SearchBudget
-    ) async -> EngineMove? {
+    ) async -> EngineDecision? {
         bestMoveCalls += 1
         lastBestMoveSkill = skill
         guard !scriptedBestMoves.isEmpty else { return nil }
-        return EngineMove(uci: scriptedBestMoves.removeFirst())
+        let move = EngineMove(uci: scriptedBestMoves.removeFirst())
+        let eval = scriptedEvaluations.isEmpty
+            ? nil
+            : scriptedEvaluations.removeFirst()
+        return EngineDecision(move: move, evaluation: eval)
     }
 
     func evaluate(

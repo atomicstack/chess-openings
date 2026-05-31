@@ -35,13 +35,14 @@ final class EngineService: EngineServicing {
         at position: Position,
         skill: Int,
         budget: SearchBudget
-    ) async -> EngineMove? {
+    ) async -> EngineDecision? {
         await enqueue {
             await self.ensureReady()
             await self.setSkill(skill)
             await self.engine.send(command: .position(.fen(position.fen)))
             let result = await self.runUntilBestmove(budget: budget)
-            return result.move
+            guard let m = result.move else { return nil }
+            return EngineDecision(move: m, evaluation: result.score)
         }
     }
 

@@ -15,6 +15,15 @@ enum EngineEvaluation: Equatable, Sendable {
     case mate(in: Int)
 }
 
+/// Pair of move + evaluation returned by `bestMove`. The evaluation
+/// is the engine's view of the position at the moment it committed to
+/// `move`, from the engine's pov (positive = engine winning). `nil`
+/// when no `info score` line was seen before bestmove.
+struct EngineDecision: Equatable, Sendable {
+    let move: EngineMove
+    let evaluation: EngineEvaluation?
+}
+
 /// Protocol-fronted engine api so tests can inject a deterministic
 /// fake without booting a real stockfish.
 protocol EngineServicing: AnyObject {
@@ -22,7 +31,7 @@ protocol EngineServicing: AnyObject {
         at position: Position,
         skill: Int,
         budget: SearchBudget
-    ) async -> EngineMove?
+    ) async -> EngineDecision?
 
     func evaluate(
         at position: Position,
