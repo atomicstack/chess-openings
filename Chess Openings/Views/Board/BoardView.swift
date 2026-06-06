@@ -50,9 +50,15 @@ struct BoardView: View {
     let position: Position
     let orientation: Side
     let highlights: [Square: Set<HighlightKind>]
+    let bestMoveArrow: BestMoveArrow?
     let moveAnnotation: MoveAnnotation?
     let moveAnnotationDurationMs: Int
     let onMove: (Move) -> Void
+
+    struct BestMoveArrow: Equatable {
+        let from: Square
+        let to: Square
+    }
 
     @State private var selected: Square?
     @State private var promotionContext: PromotionContext?
@@ -68,6 +74,7 @@ struct BoardView: View {
         position: Position,
         orientation: Side = .white,
         highlights: [Square: Set<HighlightKind>] = [:],
+        bestMoveArrow: BestMoveArrow? = nil,
         moveAnnotation: MoveAnnotation? = nil,
         moveAnnotationDurationMs: Int = 1500,
         onMove: @escaping (Move) -> Void = { _ in }
@@ -75,6 +82,7 @@ struct BoardView: View {
         self.position = position
         self.orientation = orientation
         self.highlights = highlights
+        self.bestMoveArrow = bestMoveArrow
         self.moveAnnotation = moveAnnotation
         self.moveAnnotationDurationMs = moveAnnotationDurationMs
         self.onMove = onMove
@@ -96,6 +104,10 @@ struct BoardView: View {
                     }
                 }
                 .frame(width: side, height: side)
+
+                bestMoveArrowOverlay(cell: cell)
+                    .frame(width: side, height: side)
+                    .allowsHitTesting(false)
 
                 pieceOverlay(cell: cell)
                     .frame(width: side, height: side)
@@ -157,6 +169,22 @@ struct BoardView: View {
                         y: (displayRow(for: token.square) + 0.5) * cell
                     )
             }
+        }
+    }
+
+    @ViewBuilder
+    private func bestMoveArrowOverlay(cell: CGFloat) -> some View {
+        if let arrow = bestMoveArrow {
+            let from = CGPoint(
+                x: (displayCol(for: arrow.from) + 0.5) * cell,
+                y: (displayRow(for: arrow.from) + 0.5) * cell
+            )
+            let to = CGPoint(
+                x: (displayCol(for: arrow.to) + 0.5) * cell,
+                y: (displayRow(for: arrow.to) + 0.5) * cell
+            )
+            MoveArrow(from: from, to: to, cell: cell)
+                .fill(Color.blue.opacity(0.75))
         }
     }
 
@@ -386,6 +414,58 @@ struct BoardView: View {
         case .king: k = "k"
         }
         return c + k
+    }
+}
+
+/// Filled arrow from `from` (source square center) to `to` (target
+/// square center). Shaft is `cell * 0.5` wide; arrowhead tip lands
+/// exactly on `to`, with the head flared out so it reads as an arrow
+/// rather than a thicker shaft. The shaft is shortened to meet the
+/// base of the head so the two segments don't overlap visually.
+private struct MoveArrow: Shape {
+    let from: CGPoint
+    let to: CGPoint
+    let cell: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let shaftWidth = cell * 0.32
+        let headLength = cell * 0.40
+        let headWidth = cell * 0.65
+
+        let dx = to.x - from.x
+        let dy = to.y - from.y
+        let length = (dx * dx + dy * dy).squareRoot()
+        var path = Path()
+        guard length > 0.001 else { return path }
+
+        let ux = dx / length
+        let uy = dy / length
+        // perpendicular unit vector (rotate +90°)
+        let px = -uy
+        let py = ux
+
+        let baseX = to.x - ux * headLength
+        let baseY = to.y - uy * headLength
+        let halfShaft = shaftWidth / 2
+        let halfHead = headWidth / 2
+
+        let s1 = CGPoint(x: from.x + px * halfShaft, y: from.y + py * halfShaft)
+        let s2 = CGPoint(x: baseX + px * halfShaft, y: baseY + py * halfShaft)
+        let h1 = CGPoint(x: baseX + px * halfHead, y: baseY + py * halfHead)
+        let tip = to
+        let h2 = CGPoint(x: baseX - px * halfHead, y: baseY - py * halfHead)
+        let s3 = CGPoint(x: baseX - px * halfShaft, y: baseY - py * halfShaft)
+        let s4 = CGPoint(x: from.x - px * halfShaft, y: from.y - py * halfShaft)
+
+        path.move(to: s1)
+        path.addLine(to: s2)
+        path.addLine(to: h1)
+        path.addLine(to: tip)
+        path.addLine(to: h2)
+        path.addLine(to: s3)
+        path.addLine(to: s4)
+        path.closeSubpath()
+        return path
     }
 }
 

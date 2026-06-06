@@ -77,6 +77,7 @@ struct DrillView: View {
                     position: playout?.position ?? s.position,
                     orientation: opening.side,
                     highlights: boardHighlights(for: s),
+                    bestMoveArrow: bestMoveArrow(for: s),
                     moveAnnotation: playout != nil ? moveAnnotation : nil,
                     moveAnnotationDurationMs: settings?.moveQualityBadgeMs ?? 1500,
                     onMove: { move in
@@ -359,7 +360,7 @@ struct DrillView: View {
                 solutionShown.toggle()
                 if solutionShown { hintShown = false }
             } label: {
-                Label(solutionShown ? "hide solution" : "solution", systemImage: "eye")
+                Label(solutionShown ? "hide" : "solution", systemImage: "eye")
             }
             .tint(.blue)
             .disabled(s.status == .lineComplete)
@@ -826,28 +827,21 @@ struct DrillView: View {
 
         if playout != nil {
             // Playout hint comes from stockfish at full strength: hint
-            // lights the source square, solution adds the destination.
-            if let uci = playoutHint?.uci,
+            // pulses the source square; solution draws an arrow (handled
+            // by `bestMoveArrow(for:)`) so no static square tints here.
+            if hintShown, !solutionShown,
+               let uci = playoutHint?.uci,
                let parsed = parsePlayoutHintUci(uci) {
-                if hintShown {
-                    map[parsed.from, default: []].insert(.hintFrom)
-                }
-                if solutionShown {
-                    map[parsed.from, default: []].insert(.hintFrom)
-                    map[parsed.to, default: []].insert(.hintTo)
-                }
+                map[parsed.from, default: []].insert(.hintFromPulse)
             }
         } else {
-            // Drill hint comes from the line book oracle.
-            if (hintShown || solutionShown), s.status != .lineComplete,
+            // Drill hint comes from the line book oracle. Same split:
+            // hint = pulse, solution = arrow.
+            if hintShown, !solutionShown,
+               s.status != .lineComplete,
                s.history.count < line.plies.count,
                let move = SANParser.parse(move: line.plies[s.history.count].san, in: s.position) {
-                // Hint shows only the source square; solution reveals the
-                // full move by adding the destination square.
-                map[move.start, default: []].insert(.hintFrom)
-                if solutionShown {
-                    map[move.end, default: []].insert(.hintTo)
-                }
+                map[move.start, default: []].insert(.hintFromPulse)
             }
             if case .mistake(let book, _) = s.status {
                 map[book.move.start, default: []].insert(.hintFrom)
@@ -855,6 +849,22 @@ struct DrillView: View {
             }
         }
         return map
+    }
+
+    /// Source/target squares for the solution arrow, or nil when the
+    /// solution toggle is off or the underlying move can't be resolved.
+    private func bestMoveArrow(for s: DrillSession) -> BoardView.BestMoveArrow? {
+        guard solutionShown else { return nil }
+        if playout != nil {
+            guard let uci = playoutHint?.uci,
+                  let parsed = parsePlayoutHintUci(uci) else { return nil }
+            return BoardView.BestMoveArrow(from: parsed.from, to: parsed.to)
+        }
+        guard s.status != .lineComplete,
+              s.history.count < line.plies.count,
+              let move = SANParser.parse(move: line.plies[s.history.count].san,
+                                         in: s.position) else { return nil }
+        return BoardView.BestMoveArrow(from: move.start, to: move.end)
     }
 
     /// Asks stockfish at full strength for its preferred move in the
