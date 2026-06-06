@@ -16,7 +16,34 @@ make clean
 
 Default destination is `iPhone 16 Pro`; override with `DESTINATION=...`. `XCB` wraps `xcodebuild` with `taskpolicy -d throttle nice -n20` so a long build stays out of the foreground's way — keep that wrapper unless you need to debug build perf.
 
-For physical-device deploys, use `xcodebuild -destination "platform=iOS,id=<UDID>" build` directly, then `xcrun devicectl device install app --device "<name>" <path>`.
+### Always deploy to the user's phone at end-of-cycle
+
+At the end of every work cycle — after `make build` is green and any tests pass — you MUST build for and install on the user's connected iPhone so they can verify the change on real hardware. Do not wait to be asked. The default device is `Matt's iPhone 16`. Sequence:
+
+```
+xcodebuild -project "Chess Openings.xcodeproj" \
+           -scheme "Chess Openings" \
+           -destination "platform=iOS,id=<xcodebuild-device-id>" \
+           -configuration Debug build
+xcrun devicectl device install app --device "Matt's iPhone 16" \
+  "<DerivedData>/Build/Products/Debug-iphoneos/Chess Openings.app"
+```
+
+### iPhone has two different device IDs — don't mix them up
+
+`devicectl list devices` and `xcodebuild -showdestinations` report **different** identifiers for the same physical phone. They are NOT interchangeable:
+
+- `xcrun devicectl list devices` → CoreDevice UDID, e.g. `E6E05ED6-B4DE-575A-A4B0-2D78B9C8F867`. This is what `devicectl device install app --device <name-or-UDID>` accepts. By name (`"Matt's iPhone 16"`) also works and is more stable.
+- `xcodebuild -destination "platform=iOS,id=..."` → Xcode's internal device id, e.g. `00008140-0018314A38E3C01C`. Passing the CoreDevice UDID here fails with `"no available devices matched the request"`.
+
+To get the xcodebuild id without guessing, run:
+
+```
+xcodebuild -project "Chess Openings.xcodeproj" -scheme "Chess Openings" -showdestinations 2>&1 \
+  | grep "platform:iOS, arch:arm64"
+```
+
+and use the `id:` value from that line. Cache it for the session — it does not change unless the phone is re-paired.
 
 ## Project structure quirks
 
