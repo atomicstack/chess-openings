@@ -26,15 +26,25 @@ reply and given a chance to retry (show-and-retry mode).
     replay it correctly
 - **mastery tracking**: each line records a correct-streak. hit the
   mastery threshold (default 3) without mistakes and the line is marked
-  learned. per-line progress persists between sessions.
-- **hint and solution buttons**: hint highlights the source square of
-  the next book move; solution highlights source and destination.
+  learned. once learned, a line stays learned even if you make a
+  mistake later — only the streak counter resets. the learned row
+  shows both the badge and the live streak so you can see permanent
+  mastery and current consistency at a glance. per-opening header in
+  the list reads `x/y lines learned`.
+- **hint and solution buttons**: hint pulses the source square between
+  its base grey and the blue selection shade (animation phase anchored
+  to the moment you press the button, so every press starts identical).
+  solution draws a blue arrow under the pieces from source to
+  destination, with the arrowhead tip centred on the target square.
 - **undo / reset**: undo steps back to the last position you were
   prompted from (skipping over scripted replies and black-side autoplay);
   reset returns to the starting position.
 - **board sounds**: chess.com-style sfx for moves, captures, castles,
   promotions, and checks, with a separate "opponent move" sound for
-  scripted replies. togglable in settings.
+  scripted replies. capture/check classification covers both user and
+  engine moves (the engine reply is run through chesskit's `Board` so
+  the forwarded move carries `.capture(piece)` and `checkState`, not
+  just a bare quiet-move record). togglable in settings.
 - **dual-source lines**: every opening is seeded from two lichess
   explorer sources — masters database (games ≥50) and online 2200-2500
   blitz/rapid/classical (games ≥500). lines are grouped by source in
@@ -51,11 +61,29 @@ reply and given a chance to retry (show-and-retry mode).
 - **play it out**: when a line is finished you can optionally play out
   the rest of the position against a built-in stockfish (via
   chesskit-engine). pick a difficulty in settings (0 = very weak, 20 =
-  full strength). during play you can ask for a hint (source square
-  only), reveal the best move (source + destination), undo, offer a
+  full strength). during play you can ask for a hint (pulsing source
+  square), reveal the best move (arrow overlay), undo, offer a
   draw, or resign. a small brain icon pulses in the bottom-right corner
   while stockfish is thinking. stockfish is gpl-v3; the full license is
   bundled at `Chess Openings/Resources/Stockfish/LICENSE-stockfish.txt`.
+- **move-quality badges**: every user move during playout is graded by
+  stockfish at full strength and a chess.com-style badge floats over
+  the destination square (brilliant / best / good / inaccuracy /
+  mistake / blunder). brilliant detection composes the chess.com
+  criteria — sacrifice, not-already-winning, still-winning-after,
+  best-move, minimum-knight-value, lower-value-attacker — and only
+  promotes `.best` when all hold. analysis queries run before the
+  engine's gameplay reply so the badge appears first, matching
+  lichess/chess.com timing.
+- **engine resignation**: if stockfish's eval stays sufficiently below
+  zero across a sliding window of replies, it offers to resign — the
+  user accepts the win or declines and keeps playing. draws offered by
+  the user are accepted only when stockfish's eval is within ±50 cp of
+  equal.
+- **session resume after force-quit**: both mid-drill and mid-playout
+  state are persisted to swiftdata on every applied move. relaunching
+  drops you back exactly where you were, on the right side, with hint
+  toggles cleared so you re-enable explicitly for the next move.
 
 ## architecture
 
