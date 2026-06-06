@@ -208,13 +208,20 @@ final class EnginePlayoutSession {
         // commit it via completePromotion so the board ends in a
         // playable state and submit() doesn't early-return.
         let pending = board.move(pieceAt: move.start, to: move.end)
+        var committed = pending ?? move
         if case .promotion = board.state,
            let pending,
            let promo = move.promotedPiece {
-            _ = board.completePromotion(of: pending, to: promo.kind)
+            committed = board.completePromotion(of: pending, to: promo.kind)
         }
         position = board.position
-        onMoveApplied?(move, pre, position, byUser)
+        // Forward the chesskit-processed move — it carries
+        // `.capture(piece)` / `.castle(_)` results and a populated
+        // `checkState`. The incoming `move` (e.g. one produced by
+        // `parseUCI`) is built with `result: .move` and no checkState,
+        // so the audio classifier would miss capture/check sounds for
+        // engine replies if we forwarded that instead.
+        onMoveApplied?(committed, pre, position, byUser)
     }
 
     private func recordApply(_ move: Move, byUser: Bool) {

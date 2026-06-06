@@ -190,13 +190,17 @@ final class DrillSession {
         // `board.state` for termination/promotion will read an
         // inconsistent state.
         let pending = board.move(pieceAt: move.start, to: move.end)
+        var committed = pending ?? move
         if case .promotion = board.state,
            let pending,
            let promo = move.promotedPiece {
-            _ = board.completePromotion(of: pending, to: promo.kind)
+            committed = board.completePromotion(of: pending, to: promo.kind)
         }
         position = board.position
-        onMoveApplied?(move, pre, position, byUser)
+        // Forward the chesskit-processed move so capture/castle/check
+        // metadata is populated even when the incoming `move` came from
+        // a path that didn't fill it (e.g. SAN strings without `+`/`#`).
+        onMoveApplied?(committed, pre, position, byUser)
     }
 
     /// Silently replay a persisted history of `(move, byUser)` pairs from
