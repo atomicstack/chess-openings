@@ -99,7 +99,11 @@ final class ProgressTrackingIntegrationTests: XCTestCase {
         XCTAssertEqual(recorded.first?.ply.san, "e4")
     }
 
-    func test_completion_after_mistake_resets_streak_and_unlearns() async throws {
+    /// New semantics (per user spec): once a line is learned, it stays
+    /// learned forever; only the streak resets on a mistake. The
+    /// previous behaviour cleared `isLearned` and was confusing — users
+    /// felt the app was "forgetting" their progress.
+    func test_completion_after_mistake_resets_streak_but_keeps_learned() async throws {
         let ctx = try makeContext()
         let plies = [BookPly(san: "e4", uci: "e2e4"), BookPly(san: "e5", uci: "e7e5")]
         let line = makePersistedLine(in: ctx, plies: plies)
@@ -127,7 +131,7 @@ final class ProgressTrackingIntegrationTests: XCTestCase {
         XCTAssertEqual(session.status, .lineComplete)
         XCTAssertEqual(line.mastery?.correctStreak, 0,
                        "a completion that included a mistake must zero the streak")
-        XCTAssertEqual(line.mastery?.isLearned, false,
-                       "a mistaken completion must clear the learned flag")
+        XCTAssertEqual(line.mastery?.isLearned, true,
+                       "a previously-learned line must stay learned even after a mistake")
     }
 }

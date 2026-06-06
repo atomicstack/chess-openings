@@ -69,7 +69,7 @@ struct OpeningListView: View {
         return HStack {
             VStack(alignment: .leading) {
                 Text(o.name).font(.body)
-                Text("\(o.lines.count) lines · \(learned)/\(o.lines.count) learned")
+                Text("\(learned)/\(o.lines.count) lines learned")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()

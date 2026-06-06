@@ -55,6 +55,9 @@ struct OpeningDetailView: View {
             Text(preview).font(.caption).monospaced().foregroundStyle(.secondary).lineLimit(1)
             if learned {
                 Text("✓ learned").font(.caption2).foregroundStyle(.blue)
+                Text("streak: \(streak)")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
             } else {
                 HStack(spacing: 6) {
                     ProgressBarView(current: streak, total: threshold)

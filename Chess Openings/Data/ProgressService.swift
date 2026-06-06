@@ -4,8 +4,11 @@ struct ProgressService {
     func recordCompletion(line: Line, madeMistake: Bool, threshold: Int) {
         let progress = line.mastery ?? LineProgress()
         if madeMistake {
+            // Streak resets, but `isLearned` is sticky: once the user
+            // has demonstrated mastery, a later mistake doesn't claw
+            // that back. The streak counter shown next to the learned
+            // badge is how the user tracks current consistency.
             progress.correctStreak = 0
-            progress.isLearned = false
         } else {
             progress.correctStreak += 1
             if progress.correctStreak >= threshold { progress.isLearned = true }
