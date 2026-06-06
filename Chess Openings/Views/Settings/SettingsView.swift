@@ -5,15 +5,18 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query private var settings: [UserSettings]
+    @State private var showResetConfirm: Bool = false
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("drill mode") {
-                    Picker("", selection: bindingMode()) {
+                    Picker("drill mode", selection: bindingMode()) {
                         Text("strict").tag(DrillMode.strict)
                         Text("show-and-retry").tag(DrillMode.showAndRetry)
-                    }.pickerStyle(.inline)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
                 }
                 Section("mastery") {
                     Stepper("correct streak: \(currentThreshold())",
@@ -53,11 +56,23 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
                 Section("data") {
-                    Button("reset all progress", role: .destructive) { resetProgress() }
+                    Button("reset all progress", role: .destructive) {
+                        showResetConfirm = true
+                    }
                 }
             }
             .navigationTitle("settings")
             .toolbar { Button("done") { dismiss() } }
+            .confirmationDialog(
+                "reset all progress?",
+                isPresented: $showResetConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("reset everything", role: .destructive) { resetProgress() }
+                Button("cancel", role: .cancel) { }
+            } message: {
+                Text("this wipes every line's streak, learned flag, completion count, and mistake log. there is no undo.")
+            }
         }
         .task { ensureSettingsExist() }
     }

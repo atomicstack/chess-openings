@@ -169,14 +169,7 @@ struct DrillView: View {
             }
         }
         .sheet(isPresented: $showSettingsSheet) {
-            // SettingsView is wired up in phase 8; placeholder for now.
-            VStack(spacing: 16) {
-                Text("settings").font(.headline)
-                Text("coming soon").foregroundStyle(.secondary)
-                Button("close") { showSettingsSheet = false }
-            }
-            .padding()
-            .presentationDetents([.medium])
+            SettingsView()
         }
         .onAppear { startSessionIfNeeded() }
         .onChange(of: session?.history.count ?? 0) { _, _ in
