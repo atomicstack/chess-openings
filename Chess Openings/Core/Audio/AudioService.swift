@@ -57,8 +57,18 @@ final class AudioService: AudioServicing {
     private func configureSessionIfNeeded() {
         guard !sessionConfigured else { return }
         sessionConfigured = true
-        try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default, options: [])
-        try? AVAudioSession.sharedInstance().setActive(true)
+        // `.ambient` already implies mixable, but specifying
+        // `.mixWithOthers` explicitly is belt-and-braces — and we
+        // deliberately DO NOT call `setActive(true)`. Activating the
+        // session, even on `.ambient`, can interrupt other audio
+        // (e.g. a podcast or music app) on some iOS versions. Leaving
+        // it inactive lets AVAudioPlayer just decode + emit through
+        // the existing mixing chain.
+        try? AVAudioSession.sharedInstance().setCategory(
+            .ambient,
+            mode: .default,
+            options: [.mixWithOthers]
+        )
     }
 
     private func loadPlayer(for effect: SoundEffect) -> AVAudioPlayer? {
