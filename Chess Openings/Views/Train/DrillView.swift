@@ -27,6 +27,20 @@ struct DrillView: View {
     /// the post-move analyser can verify it's still relevant before
     /// using the cached result.
     @State private var precomputeTask: Task<(position: Position, decision: EngineDecision?), Never>?
+    /// Drives the "show line" autoplay feature in drill mode. While
+    /// `showLineIsPlaying` is true a background task ticks the book
+    /// forward one ply per second; toggling the button cancels the
+    /// task. Plays do NOT update `LineProgress` — see `startShowLine`
+    /// for the `onLineComplete` swap that achieves that.
+    @State private var showLineIsPlaying: Bool = false
+    @State private var showLineTask: Task<Void, Never>?
+
+    /// Approximate height in points of a single control row — used to
+    /// pad the bottom of the controls block so the buttons sit a row
+    /// higher than the screen edge. Matches the natural height of the
+    /// drill `controlsRow` and the new `showLineRow` so the playout
+    /// and drill layouts feel symmetric.
+    private let controlsRowHeight: CGFloat = 60
 
     /// Which match-management action is awaiting user confirmation.
     /// `nil` when no modal is up.
@@ -84,6 +98,10 @@ struct DrillView: View {
                         if let p = playout {
                             Task { await p.submit(move) }
                         } else {
+                            // A user move cancels any "show line"
+                            // autoplay in progress so the playback
+                            // doesn't fight the player.
+                            stopShowLine(on: s)
                             Task { await s.submit(move) }
                         }
                     }
@@ -106,12 +124,16 @@ struct DrillView: View {
                         onOfferDraw: { withAnimation(.easeOut(duration: 0.18)) { pendingConfirmation = .draw } },
                         onExitPlayout: { withAnimation(.easeOut(duration: 0.18)) { pendingConfirmation = .exit } }
                     )
+                    // Lift the control group up by one row-height —
+                    // drill mode fills the same slot with `showLineRow`.
+                    Color.clear.frame(height: controlsRowHeight)
                     Spacer()
                 } else {
                     promptRow(for: s)
                     moveListRow(for: s)
                     Spacer()
                     controlsRow(for: s)
+                    showLineRow(for: s)
                     Spacer()
                 }
             } else {
@@ -172,6 +194,14 @@ struct DrillView: View {
             SettingsView()
         }
         .onAppear { startSessionIfNeeded() }
+        .onDisappear {
+            // Navigating away from the drill (back button, switching
+            // lines) must cancel any "show line" playback in flight —
+            // otherwise the task keeps ticking against a stale session
+            // and the audio layer plays move sfx behind the user's
+            // back while they're staring at the line list.
+            if let s = session { stopShowLine(on: s) }
+        }
         .onChange(of: session?.history.count ?? 0) { _, _ in
             // Any applied move — user, reply, autoplay, undo, reset —
             // invalidates whatever hint/solution the user had visible.
@@ -236,18 +266,21 @@ struct DrillView: View {
     /// End-of-line banner. Text is "perfect" for a clean run, otherwise
     /// "line complete". A bouncing green checkmark always trails; if the
     /// run also averaged under 1 second per ply, a "speedy" tag with a
-    /// bouncing yellow bolt is appended.
+    /// bouncing yellow bolt is appended. Both medals are suppressed
+    /// when the line was finished by the "show line" playback feature
+    /// — celebrating a run the user just watched would be misleading.
     @ViewBuilder
     private func completeBanner(for s: DrillSession) -> some View {
+        let earnedRun = !s.completedViaShowLine
         HStack(spacing: 6) {
-            Text(s.completedWithoutMistake ? "perfect" : "line complete")
+            Text((earnedRun && s.completedWithoutMistake) ? "perfect" : "line complete")
                 .font(.callout)
                 .foregroundStyle(.green)
             Image(systemName: "checkmark")
                 .symbolRenderingMode(.monochrome)
                 .foregroundStyle(.green)
                 .symbolEffect(.bounce, options: .repeat(.continuous))
-            if isSpeedy(s) {
+            if earnedRun, isSpeedy(s) {
                 Text("speedy")
                     .font(.callout)
                     .foregroundStyle(.yellow)
@@ -360,6 +393,7 @@ struct DrillView: View {
             .frame(maxWidth: .infinity)
 
             Button {
+                stopShowLine(on: s)
                 s.undo()
             } label: {
                 Label("undo", systemImage: "arrow.uturn.backward")
@@ -369,6 +403,7 @@ struct DrillView: View {
             .frame(maxWidth: .infinity)
 
             Button {
+                stopShowLine(on: s)
                 s.reset()
                 if opening.side == .black {
                     scheduleBlackSideAutoplay(on: s)
@@ -380,6 +415,75 @@ struct DrillView: View {
             .frame(maxWidth: .infinity)
         }
         .padding(.horizontal)
+    }
+
+    /// Second-row "show line" button used in drill mode. Plays the
+    /// remaining book plies one per second so the user can preview the
+    /// line without drilling it. Acts as a play/pause toggle; the
+    /// playback does not count toward `LineProgress` (see
+    /// `startShowLine`).
+    private func showLineRow(for s: DrillSession) -> some View {
+        let lineExhausted = s.history.count >= line.plies.count
+        return HStack {
+            Spacer()
+            Button {
+                toggleShowLine(on: s)
+            } label: {
+                Label("show line",
+                      systemImage: showLineIsPlaying ? "pause.fill" : "play.fill")
+            }
+            .tint(.purple)
+            .disabled(lineExhausted && !showLineIsPlaying)
+            Spacer()
+        }
+        .padding(.horizontal)
+        .frame(height: controlsRowHeight)
+    }
+
+    // MARK: - show line autoplay
+
+    private func toggleShowLine(on s: DrillSession) {
+        if showLineIsPlaying {
+            stopShowLine(on: s)
+        } else {
+            startShowLine(on: s)
+        }
+    }
+
+    private func startShowLine(on s: DrillSession) {
+        guard !showLineIsPlaying else { return }
+        guard s.history.count < line.plies.count else { return }
+        // Detach the line-complete callback so finishing the line via
+        // autoplay does NOT update LineProgress, play the victory sfx,
+        // or trigger the learning confetti. Restored when the task
+        // ends (cancel, line done, or no more plies).
+        let priorComplete = s.onLineComplete
+        s.onLineComplete = nil
+        showLineIsPlaying = true
+        showLineTask = Task { @MainActor in
+            defer {
+                s.onLineComplete = priorComplete
+                showLineIsPlaying = false
+                showLineTask = nil
+            }
+            while !Task.isCancelled, s.history.count < line.plies.count {
+                try? await Task.sleep(for: .seconds(1))
+                if Task.isCancelled { return }
+                // Re-check inside the loop: a user undo / reset /
+                // human move between ticks may have cancelled the
+                // task or made the next ply impossible.
+                guard !Task.isCancelled,
+                      s.history.count < line.plies.count else { return }
+                s.autoplayNextBookPly(viaShowLine: true)
+            }
+        }
+    }
+
+    private func stopShowLine(on s: DrillSession) {
+        guard showLineIsPlaying || showLineTask != nil else { return }
+        showLineTask?.cancel()
+        showLineTask = nil
+        showLineIsPlaying = false
     }
 
     // MARK: - state helpers
@@ -399,7 +503,8 @@ struct DrillView: View {
             oracle: oracle,
             mode: mode,
             masteryThreshold: threshold,
-            initialStreak: initialStreak
+            initialStreak: initialStreak,
+            userSide: opening.side
         )
         s.scriptedReplyDelayMs = 750
         let player = AudioService(isEnabled: { [settingsList] in
@@ -793,7 +898,7 @@ struct DrillView: View {
     private func promptColor(for s: DrillSession) -> Color {
         switch s.status {
         case .waitingForUser, .evaluating: return .primary
-        case .mistake:                      return .red
+        case .mistake:                      return Color(red: 0.85, green: 0.75, blue: 0.25)
         case .lineComplete:                 return .green
         }
     }
@@ -829,24 +934,28 @@ struct DrillView: View {
             }
         } else {
             // Drill hint comes from the line book oracle. Same split:
-            // hint = pulse, solution = arrow.
+            // hint = pulse, solution = arrow. Mistake state also draws
+            // an arrow — see `bestMoveArrow(for:)`.
             if hintShown, !solutionShown,
                s.status != .lineComplete,
                s.history.count < line.plies.count,
                let move = SANParser.parse(move: line.plies[s.history.count].san, in: s.position) {
                 map[move.start, default: []].insert(.hintFromPulse)
             }
-            if case .mistake(let book, _) = s.status {
-                map[book.move.start, default: []].insert(.hintFrom)
-                map[book.move.end, default: []].insert(.hintTo)
-            }
         }
         return map
     }
 
-    /// Source/target squares for the solution arrow, or nil when the
-    /// solution toggle is off or the underlying move can't be resolved.
+    /// Source/target squares for the solution arrow, or nil when no
+    /// arrow should render. Fires when the solution button is on, OR
+    /// when the drill is in `.mistake` (show-and-retry) so the user
+    /// sees the book's expected move via the same arrow visual.
     private func bestMoveArrow(for s: DrillSession) -> BoardView.BestMoveArrow? {
+        // Show-and-retry feedback uses the same arrow as the solution
+        // button — independent of the solution toggle.
+        if case .mistake(let book, _) = s.status {
+            return BoardView.BestMoveArrow(from: book.move.start, to: book.move.end)
+        }
         guard solutionShown else { return nil }
         if playout != nil {
             guard let uci = playoutHint?.uci,

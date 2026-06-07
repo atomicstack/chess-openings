@@ -105,13 +105,25 @@ struct BoardView: View {
                 }
                 .frame(width: side, height: side)
 
+                // Non-source pieces sit below the arrow so the arrow
+                // is visible passing over them (especially important
+                // for knight moves that cross occupied squares).
+                pieceOverlay(cell: cell, excluding: bestMoveArrow?.from)
+                    .frame(width: side, height: side)
+                    .allowsHitTesting(false)
+
                 bestMoveArrowOverlay(cell: cell)
                     .frame(width: side, height: side)
                     .allowsHitTesting(false)
 
-                pieceOverlay(cell: cell)
-                    .frame(width: side, height: side)
-                    .allowsHitTesting(false)
+                // The source piece floats above the arrow so the
+                // piece-on-its-square reads as the owner of the
+                // square, with the arrow tail tucked underneath.
+                if let from = bestMoveArrow?.from {
+                    pieceOverlay(cell: cell, including: from)
+                        .frame(width: side, height: side)
+                        .allowsHitTesting(false)
+                }
 
                 moveAnnotationOverlay(cell: cell)
                     .frame(width: side, height: side)
@@ -122,6 +134,18 @@ struct BoardView: View {
         .aspectRatio(1, contentMode: .fit)
         .onChange(of: fenFingerprint(of: position), initial: true) { _, _ in
             reconcileTokens()
+        }
+        .onChange(of: bestMoveArrow) { _, arrow in
+            // If the user pressed "solution" with an unrelated piece
+            // already tapped, drop that selection so the new arrow
+            // overlay isn't accompanied by a stale blue legal-target
+            // wash from the wrong piece. Keep the selection when it
+            // matches the arrow source — that case is "the user picked
+            // the right piece".
+            guard let arrow else { return }
+            if let sel = selected, sel != arrow.from {
+                selected = nil
+            }
         }
         .sheet(item: $promotionContext) { ctx in
             PromotionPickerView(side: sideToMove) { kind in
@@ -144,7 +168,7 @@ struct BoardView: View {
             return performDrop(from: token.square, to: sq)
         }
 
-        if let piece = position.piece(at: sq), piece.color == position.sideToMove {
+        if let piece = position.piece(at: sq), piece.color == userPieceColor {
             view.draggable(SquareToken(square: sq)) {
                 Image(assetName(color: piece.color, kind: piece.kind))
                     .resizable().scaledToFit()
@@ -156,20 +180,42 @@ struct BoardView: View {
         }
     }
 
-    private func pieceOverlay(cell: CGFloat) -> some View {
+    /// Pass `excluding: sq` to render every piece EXCEPT the one on
+    /// that square (used for the under-arrow layer). Pass `including:
+    /// sq` to render ONLY the piece on that square (used for the
+    /// over-arrow source-piece layer). Pass neither for all pieces.
+    /// The same `pieceTokens` array drives both filters so identities
+    /// stay stable across reconciles and animations don't double-fire.
+    private func pieceOverlay(
+        cell: CGFloat,
+        excluding: Square? = nil,
+        including: Square? = nil
+    ) -> some View {
         ZStack {
             ForEach(pieceTokens) { token in
-                Image(assetName(color: token.color, kind: token.kind))
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: cell, height: cell)
-                    .padding(4)
-                    .position(
-                        x: (displayCol(for: token.square) + 0.5) * cell,
-                        y: (displayRow(for: token.square) + 0.5) * cell
-                    )
+                if shouldRender(token, excluding: excluding, including: including) {
+                    Image(assetName(color: token.color, kind: token.kind))
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: cell, height: cell)
+                        .padding(4)
+                        .position(
+                            x: (displayCol(for: token.square) + 0.5) * cell,
+                            y: (displayRow(for: token.square) + 0.5) * cell
+                        )
+                }
             }
         }
+    }
+
+    private func shouldRender(
+        _ token: PieceToken,
+        excluding: Square?,
+        including: Square?
+    ) -> Bool {
+        if let including { return token.square == including }
+        if let excluding { return token.square != excluding }
+        return true
     }
 
     @ViewBuilder
@@ -215,17 +261,24 @@ struct BoardView: View {
                 selected = nil
                 return
             }
-            if let piece = position.piece(at: sq), piece.color == position.sideToMove {
+            if let piece = position.piece(at: sq), piece.color == userPieceColor {
                 selected = sq
             } else {
                 selected = nil
             }
         } else {
-            if let piece = position.piece(at: sq), piece.color == position.sideToMove {
+            if let piece = position.piece(at: sq), piece.color == userPieceColor {
                 selected = sq
             }
         }
     }
+
+    /// The chesskit colour the user is playing. Used as a HARD guard
+    /// on every input path so opponent pieces are never selectable or
+    /// draggable, regardless of whatever `position.sideToMove` happens
+    /// to be after an undo/restore. See CLAUDE.md "user controls the
+    /// wrong side" — this is the input-layer half of that fix.
+    private var userPieceColor: Piece.Color { orientation.ckColor }
 
     @discardableResult
     private func performDrop(from: Square, to: Square) -> Bool {
@@ -278,7 +331,16 @@ struct BoardView: View {
                    victim.color != position.sideToMove {
                     result.insert(.captureTarget)
                 } else {
-                    result.insert(.legalTarget)
+                    // Suppress the blue legal-target wash when the square
+                    // already carries a show-and-retry hint tint — the
+                    // green hint should stay pure rather than mixing into
+                    // a muddy teal with the "you could move here"
+                    // indicator. Capture rings are independent info and
+                    // are not suppressed.
+                    let hasHint = result.contains(.hintFrom) || result.contains(.hintTo)
+                    if !hasHint {
+                        result.insert(.legalTarget)
+                    }
                 }
             }
         }

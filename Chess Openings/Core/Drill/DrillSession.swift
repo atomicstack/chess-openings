@@ -43,9 +43,9 @@ final class DrillSession {
     private(set) var history: [Move]
     private(set) var preMovePositions: [Position]
     /// Parallel to `history`: `true` for moves the user submitted, `false`
-    /// for scripted replies and black-side autoplay. `undo` uses this to
-    /// step back to the last position the user was prompted from, never
-    /// past an autoplay-only state.
+    /// for scripted replies, black-side autoplay, and "show line" preview
+    /// plies. Used to detect the black-side autoplay scaffold state so
+    /// `undo` doesn't pop past it.
     private(set) var historyByUser: [Bool]
     private(set) var status: DrillStatus
     private(set) var correctStreak: Int
@@ -87,17 +87,34 @@ final class DrillSession {
     /// mirror its `position` on `self` after each mutation.
     private var board: Board
 
+    /// Which colour the user is drilling. Locks every `undo()` down to
+    /// a state where `position.sideToMove == userSide`, so the user
+    /// can NEVER be left on the opponent's clock — that misalignment
+    /// is the side-swap bug (see CLAUDE.md).
+    let userSide: Side
+
+    /// True when the current `.lineComplete` state was reached via a
+    /// show-line autoplay step (the playback feature) rather than the
+    /// user finishing the line themselves. The "perfect" / "speedy"
+    /// banners suppress when this is set — it would be misleading to
+    /// celebrate a line the user just watched play out.
+    /// Reset by `reset()`; cleared on every non-show-line autoplay
+    /// completion so a manual run-through afterwards earns its medals.
+    private(set) var completedViaShowLine: Bool = false
+
     init(
         line: LineSnapshot,
         oracle: MoveOracle,
         mode: DrillMode,
         masteryThreshold: Int,
-        initialStreak: Int = 0
+        initialStreak: Int = 0,
+        userSide: Side = .white
     ) {
         self.line = line
         self.oracle = oracle
         self.mode = mode
         self.masteryThreshold = masteryThreshold
+        self.userSide = userSide
         self.board = Board(position: .standard)
         self.position = .standard
         self.history = []
@@ -163,6 +180,7 @@ final class DrillSession {
         }
 
         if history.count >= line.plies.count {
+            completedViaShowLine = false
             finishLine()
         } else {
             status = .waitingForUser
@@ -236,9 +254,10 @@ final class DrillSession {
         }
     }
 
-    /// Apply a move and record it in `history`/`preMovePositions`/`historyByUser`
-    /// so the three arrays stay the same length. Callers must not append to
-    /// `history` directly — go through this helper.
+    /// Apply a move and record it in `history`/`preMovePositions`/
+    /// `historyByUser` so the three arrays stay the same length.
+    /// Callers must not append to `history` directly — go through
+    /// this helper.
     private func recordApply(_ move: Move, byUser: Bool) {
         preMovePositions.append(position)
         apply(move, byUser: byUser)
@@ -263,12 +282,16 @@ final class DrillSession {
     /// user. Used to auto-play the opening move when the user is playing
     /// black, so the drill board is already waiting on the user's reply.
     /// No-op if the line is exhausted or the next ply cannot be parsed.
-    func autoplayNextBookPly() {
+    func autoplayNextBookPly(viaShowLine: Bool = false) {
         guard history.count < line.plies.count else { return }
         let ply = line.plies[history.count]
         guard let move = SANParser.parse(move: ply.san, in: position) else { return }
         recordApply(move, byUser: false)
         if history.count >= line.plies.count {
+            // Attribute the completion. Black-side scaffold autoplay
+            // never finishes the line (only one ply), so this only
+            // tags real show-line driven completions.
+            completedViaShowLine = viaShowLine
             finishLine()
         } else {
             status = .waitingForUser
@@ -297,14 +320,36 @@ final class DrillSession {
     /// — popping past that state would silently flip which side the user
     /// controls.
     func undo() {
-        guard let lastUserIdx = historyByUser.lastIndex(of: true) else { return }
-        let popCount = history.count - lastUserIdx
-        history.removeLast(popCount)
-        preMovePositions.removeLast(min(popCount, preMovePositions.count))
-        historyByUser.removeLast(popCount)
-        rebuildBoardFromHistory()
-        status = .waitingForUser
-        lastPromptAt = Date()
+        // Walk backwards through `preMovePositions` to find the most
+        // recent prior position where `sideToMove == userSide` — that's
+        // where the user was last on the clock. Pop down to that state.
+        //
+        // Why this shape: `preMovePositions[k]` is the position BEFORE
+        // history[k] was applied. Popping the last (count - k) plies
+        // therefore lands us at `preMovePositions[k]`. The smallest k
+        // that puts the user back on their clock minimises the pop.
+        //
+        // Hard invariant on exit: position.sideToMove == userSide. This
+        // was the source of the side-swap bug — undoing in the middle
+        // of an opponent-replied sequence could leave the user with
+        // black pieces draggable in a white-side drill. See CLAUDE.md.
+        guard !history.isEmpty else { return }
+        let target = userSide.ckColor
+        for k in stride(from: history.count - 1, through: 0, by: -1) {
+            if preMovePositions[k].sideToMove == target {
+                let popCount = history.count - k
+                history.removeLast(popCount)
+                preMovePositions.removeLast(popCount)
+                historyByUser.removeLast(popCount)
+                rebuildBoardFromHistory()
+                status = .waitingForUser
+                lastPromptAt = Date()
+                return
+            }
+        }
+        // No earlier state has the user on the clock — we're already
+        // at the floor (typically a black-side scaffold consisting of
+        // exactly the opening white-opener autoplay). No-op.
     }
 
     /// Return to the initial position and clear all drill state.
@@ -316,6 +361,7 @@ final class DrillSession {
         position = board.position
         status = .waitingForUser
         completedWithoutMistake = true
+        completedViaShowLine = false
         userThinkingTime = 0
         lastPromptAt = Date()
     }

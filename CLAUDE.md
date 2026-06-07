@@ -136,6 +136,51 @@ This applies to:
 
 If you're touching ANY code that calls `board.move(pieceAt:to:)`, ask: "could this move be a promotion?" If yes, you need the two-step. If you're not sure, write a test against a pawn-on-7th FEN before changing anything.
 
+## Never let the user control the wrong side
+
+The bug has shipped FOUR times. Symptom: in a white-side drill the
+user can suddenly drag a black piece (or vice versa). The user calls
+this "the side swap".
+
+Root cause is always one of:
+
+- An `undo` / `restore` / `replay` path leaves `position.sideToMove`
+  set to the opponent's colour while `status == .waitingForUser`.
+  `BoardView`'s drag predicate then makes opponent pieces interactive
+  because chesskit's legality check uses `position.sideToMove`.
+- A code path uses `position.sideToMove` as a proxy for "the user's
+  colour". It's not. It's "whose turn it is right now". They agree
+  most of the time and disagree exactly in the broken state.
+
+**Two invariants — both required:**
+
+1. `DrillSession.undo()` (and any future replay/restore helper) MUST
+   land at a state where `position.sideToMove == userSide`. The
+   algorithm in place walks `preMovePositions` backward for the most
+   recent index `k` with `preMovePositions[k].sideToMove == userSide`
+   and pops down to there. If no such `k` exists (e.g. black-side
+   scaffold with no user moves yet), the call must no-op rather than
+   popping into a white-to-move state. `DrillSession` accepts
+   `userSide: Side` at init for this reason — don't drop the param.
+2. `BoardView` gates draggable / tappable pieces by
+   `piece.color == userPieceColor` (derived from `orientation`),
+   NOT by `piece.color == position.sideToMove`. This is the input-
+   layer guardrail — even if the session-level invariant slips, the
+   user still cannot touch opponent pieces.
+
+Regression suite: `DrillEngineTests` —
+`test_undo_always_leaves_user_to_move_after_show_line`,
+`test_undo_works_with_only_show_line_plies`,
+`test_undo_preserves_black_side_scaffold`,
+`test_drillsession_undo_is_noop_before_any_user_move`.
+
+If you touch `DrillSession.undo()`, the equivalent in
+`EnginePlayoutSession`, `restore(history:)`, or any new session-shaped
+type, add a test asserting `position.sideToMove == userSide` at the
+end of the operation BEFORE you write the implementation. If you find
+yourself reading `position.sideToMove` outside chesskit move-legality
+code, ask: "do I actually want `userSide` here?" — usually you do.
+
 ## License note
 
 Stockfish is GPL-v3. Bundling it pulls the app under GPL-compatible obligations. There's well-known unresolved tension between GPL-3 and App Store ToS — many Stockfish-bundling iOS apps ship anyway. Full license at `Chess Openings/Resources/Stockfish/LICENSE-stockfish.txt`.

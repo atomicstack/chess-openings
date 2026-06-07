@@ -111,7 +111,7 @@ final class DrillEngineTests: XCTestCase {
 
     @MainActor
     func test_drillsession_undo_is_noop_before_any_user_move() async throws {
-        // black-side style setup: first ply is auto-played (byUser=false),
+        // black-side setup: first ply is auto-played (byUser=false),
         // user hasn't moved yet. undo in this state used to empty the
         // history and silently flip which side the user was controlling.
         let line = makeTestLine(["e4", "e5", "Nf3", "Nc6"])
@@ -119,7 +119,8 @@ final class DrillEngineTests: XCTestCase {
             line: line,
             oracle: LineBookOracle(plies: line.plies),
             mode: .strict,
-            masteryThreshold: 3
+            masteryThreshold: 3,
+            userSide: .black
         )
         session.autoplayNextBookPly()
         XCTAssertEqual(session.history.count, 1)
@@ -164,7 +165,8 @@ final class DrillEngineTests: XCTestCase {
 
         service.recordCompletion(line: line, madeMistake: true, threshold: 3)
         XCTAssertEqual(line.mastery?.correctStreak, 0)
-        XCTAssertEqual(line.mastery?.isLearned, false)
+        XCTAssertEqual(line.mastery?.isLearned, true,
+                       "isLearned is sticky once reached — a later mistake only resets the streak")
     }
 
     @MainActor
@@ -477,6 +479,140 @@ final class DrillEngineTests: XCTestCase {
 
         XCTAssertEqual(session.userThinkingTime, 0)
         XCTAssertNil(session.averageSecondsPerPly)
+    }
+
+    /// Show-line attribution: when the playback feature drives the
+    /// final ply, `completedViaShowLine` flips on; a normal user-driven
+    /// completion leaves it false. The drill view keys the perfect /
+    /// speedy banners off this so the user doesn't get medals for
+    /// watching the line play itself.
+    @MainActor
+    func test_completedViaShowLine_marks_only_playback_finishes() async throws {
+        let line = makeTestLine(["e4", "e5"])
+
+        // path 1: show-line autoplays both plies
+        let watched = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        watched.autoplayNextBookPly(viaShowLine: true)
+        watched.autoplayNextBookPly(viaShowLine: true)
+        XCTAssertEqual(watched.status, .lineComplete)
+        XCTAssertTrue(watched.completedViaShowLine,
+                      "show-line drove the completion — flag must be set")
+
+        // path 2: user finishes manually
+        let played = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3
+        )
+        let e4 = try SanCodec.parse("e4", in: Position.standard)
+        await played.submit(e4)
+        XCTAssertEqual(played.status, .lineComplete)
+        XCTAssertFalse(played.completedViaShowLine,
+                       "user-driven completion must not set the flag")
+    }
+
+    /// Hard invariant: at the end of `undo()`, `position.sideToMove`
+    /// must equal `userSide`. Anything else means the user effectively
+    /// controls the opponent's pieces, because `BoardView`'s drag
+    /// predicate gates by `position.sideToMove`. This bug has shipped
+    /// FOUR times — see CLAUDE.md "user controls the wrong side" note.
+    @MainActor
+    func test_undo_always_leaves_user_to_move_after_show_line() async throws {
+        // white user: e4, reply e5, show-line plays Nf3 → side=black
+        let line = makeTestLine(["e4", "e5", "Nf3", "Nc6"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3,
+            userSide: .white
+        )
+        let e4 = try SanCodec.parse("e4", in: Position.standard)
+        await session.submit(e4)
+        XCTAssertEqual(session.history.count, 2)
+        XCTAssertEqual(session.position.sideToMove, .white)
+
+        session.autoplayNextBookPly() // Nf3 — now black to move
+        XCTAssertEqual(session.history.count, 3)
+        XCTAssertEqual(session.position.sideToMove, .black,
+                       "sanity: show-line left us on the opponent's clock")
+
+        session.undo()
+        XCTAssertEqual(session.position.sideToMove, .white,
+                       "undo must restore the user to the clock — opponent-to-move is the side-swap bug")
+        XCTAssertEqual(session.history.count, 2,
+                       "pop the single show-line ply to land on the user's turn")
+    }
+
+    /// Undo must work even when the user hasn't played anything yet —
+    /// e.g. they hit "show line" first thing to preview the line.
+    /// Original `lastIndex(of: true)` guard short-circuited and made
+    /// undo a no-op in that state.
+    @MainActor
+    func test_undo_works_with_only_show_line_plies() async throws {
+        let line = makeTestLine(["e4", "e5", "Nf3"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3,
+            userSide: .white
+        )
+        session.autoplayNextBookPly() // e4
+        session.autoplayNextBookPly() // e5
+        XCTAssertEqual(session.history.count, 2)
+
+        session.undo()
+        XCTAssertEqual(session.history.count, 0,
+                       "undo must pop even when the user hasn't played anything personally")
+        XCTAssertEqual(session.position.sideToMove, .white)
+    }
+
+    /// Black-side scaffold must be preserved across undo. The user is
+    /// playing black: the initial white opener is autoplayed as a
+    /// scaffold. Undo from "scaffold + show-line plies" must land at
+    /// "scaffold only" and stop there — never reveal a white-to-move
+    /// state to the black user.
+    @MainActor
+    func test_undo_preserves_black_side_scaffold() async throws {
+        let line = makeTestLine(["e4", "e5", "Nf3", "Nc6"])
+        let session = DrillSession(
+            line: line,
+            oracle: LineBookOracle(plies: line.plies),
+            mode: .strict,
+            masteryThreshold: 3,
+            userSide: .black
+        )
+        // scaffold: white plays e4 for the black user
+        session.autoplayNextBookPly()
+        XCTAssertEqual(session.position.sideToMove, .black)
+
+        // show-line continues: e5 then Nf3
+        session.autoplayNextBookPly() // e5
+        session.autoplayNextBookPly() // Nf3
+        XCTAssertEqual(session.history.count, 3)
+        XCTAssertEqual(session.position.sideToMove, .black)
+
+        // undo pops back to the most-recent black-to-move state, which
+        // is "just after the scaffold ply" — popping both e5 and Nf3.
+        session.undo()
+        XCTAssertEqual(session.history.count, 1,
+                       "should land at the scaffold ply (most recent black-to-move state)")
+        XCTAssertEqual(session.position.sideToMove, .black)
+
+        // another undo: no earlier black-to-move state exists — the
+        // scaffold's preMovePosition is the standard position (white
+        // to move), so the algorithm correctly no-ops here.
+        session.undo()
+        XCTAssertEqual(session.history.count, 1,
+                       "undo must never pop past the black-side scaffold")
+        XCTAssertEqual(session.position.sideToMove, .black)
     }
 
     // helper
