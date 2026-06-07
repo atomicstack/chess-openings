@@ -34,11 +34,24 @@ reply and given a chance to retry (show-and-retry mode).
 - **hint and solution buttons**: hint pulses the source square between
   its base grey and the blue selection shade (animation phase anchored
   to the moment you press the button, so every press starts identical).
-  solution draws a blue arrow under the pieces from source to
-  destination, with the arrowhead tip centred on the target square.
-- **undo / reset**: undo steps back to the last position you were
-  prompted from (skipping over scripted replies and black-side autoplay);
-  reset returns to the starting position.
+  solution draws a blue arrow from source to destination, with the
+  arrowhead tip centred on the target square — the arrow sits over the
+  intermediate pieces on the board (so knight jumps are readable) and
+  under the source piece. show-and-retry mistake feedback reuses the
+  same arrow visual instead of a square tint. pressing solution while
+  an unrelated piece is selected deselects it so the legal-target wash
+  doesn't mix with the arrow.
+- **show line**: a second-row purple play/pause button in drill mode
+  autoplays the rest of the current line, one ply per second, so you
+  can preview a line before drilling it. tapping the button again
+  pauses; navigating away (back button) cancels the playback so audio
+  doesn't continue behind your back. lines completed via show line
+  don't earn the "perfect" or "speedy" medals.
+- **undo / reset**: undo always lands at a position where it's your
+  turn (never the opponent's) — even after the show-line preview
+  applied an odd number of plies. reset returns to the starting
+  position (or to the post-scaffold state for a black-side opening).
+  show-line autoplay is cancelled by undo, reset, or any human move.
 - **board sounds**: chess.com-style sfx for moves, captures, castles,
   promotions, and checks, with a separate "opponent move" sound for
   scripted replies. capture/check classification covers both user and
@@ -84,6 +97,18 @@ reply and given a chance to retry (show-and-retry mode).
   state are persisted to swiftdata on every applied move. relaunching
   drops you back exactly where you were, on the right side, with hint
   toggles cleared so you re-enable explicitly for the next move.
+- **settings panel** (gear icon, top right of the drill view): drill
+  mode (strict / show-and-retry segmented picker), mastery threshold
+  (1-10 correct-streak target), sounds toggle, engine difficulty
+  slider, move-quality analysis depth, badge duration, and a
+  "reset all progress" button with a destructive confirmation dialog.
+- **never-the-wrong-side invariant**: the drill view is designed so
+  the user can never end up controlling the opponent's pieces. undo
+  is locked to land on a position where `sideToMove == userSide`, and
+  the board view gates piece drag/tap by the user's colour
+  independently — so even if a session-level invariant slips, the
+  input layer still refuses to move the wrong colour. regression
+  suite in `DrillEngineTests`.
 
 ## architecture
 
