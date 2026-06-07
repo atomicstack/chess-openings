@@ -102,13 +102,6 @@ reply and given a chance to retry (show-and-retry mode).
   (1-10 correct-streak target), sounds toggle, engine difficulty
   slider, move-quality analysis depth, badge duration, and a
   "reset all progress" button with a destructive confirmation dialog.
-- **never-the-wrong-side invariant**: the drill view is designed so
-  the user can never end up controlling the opponent's pieces. undo
-  is locked to land on a position where `sideToMove == userSide`, and
-  the board view gates piece drag/tap by the user's colour
-  independently — so even if a session-level invariant slips, the
-  input layer still refuses to move the wrong colour. regression
-  suite in `DrillEngineTests`.
 
 ## architecture
 
