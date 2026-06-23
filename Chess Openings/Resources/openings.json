@@ -6,7 +6,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "Bc5",
+               "name" : "Italian Game: Classical Variation, Giuoco Pianissimo (Bc5)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -130,10 +130,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "italian game|masters|f8c5",
                "tags" : []
             },
             {
-               "name" : "Nf6",
+               "name" : "Italian Game: Classical Variation, Giuoco Pianissimo (Nf6)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -257,10 +258,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "italian game|masters|g8f6",
                "tags" : []
             },
             {
-               "name" : "Be7",
+               "name" : "Italian Game: Hungarian Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -348,10 +350,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "italian game|masters|f8e7",
                "tags" : []
             },
             {
-               "name" : "d6",
+               "name" : "Italian Game: Paris Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -451,10 +454,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "italian game|masters|d7d6",
                "tags" : []
             },
             {
-               "name" : "g6",
+               "name" : "Italian Game",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -518,10 +522,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "italian game|masters|g7g6",
                "tags" : []
             },
             {
-               "name" : "Nf6",
+               "name" : "Italian Game: Classical Variation, Giuoco Pianissimo",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -645,10 +650,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "italian game|open|g8f6",
                "tags" : []
             },
             {
-               "name" : "Bc5",
+               "name" : "Italian Game: Classical Variation, Greco Gambit, Moeller-Therkatz Attack",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -772,10 +778,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "italian game|open|f8c5",
                "tags" : []
             },
             {
-               "name" : "Be7",
+               "name" : "Italian Game: Hungarian Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -875,10 +882,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "italian game|open|f8e7",
                "tags" : []
             },
             {
-               "name" : "d6",
+               "name" : "Italian Game: Paris Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -1002,10 +1010,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "italian game|open|d7d6",
                "tags" : []
             },
             {
-               "name" : "f5",
+               "name" : "Italian Game: Rousseau Gambit",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -1111,6 +1120,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "italian game|open|f7f5",
                "tags" : []
             }
          ],
@@ -1124,7 +1134,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "a6",
+               "name" : "Ruy Lopez: Closed, Chigorin Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -1248,10 +1258,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "ruy lopez|masters|a7a6",
                "tags" : []
             },
             {
-               "name" : "Nf6",
+               "name" : "Ruy Lopez: Berlin Defense, l'Hermet Variation, Berlin Wall Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -1375,10 +1386,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "ruy lopez|masters|g8f6",
                "tags" : []
             },
             {
-               "name" : "f5",
+               "name" : "Ruy Lopez: Schliemann Defense, Tartakower Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -1496,10 +1508,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "ruy lopez|masters|f7f5",
                "tags" : []
             },
             {
-               "name" : "g6",
+               "name" : "Ruy Lopez: Morphy Defense, Modern Steinitz Defense, Fianchetto Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -1623,10 +1636,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "ruy lopez|masters|g7g6",
                "tags" : []
             },
             {
-               "name" : "Nge7",
+               "name" : "Ruy Lopez: Cozio Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -1750,10 +1764,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "ruy lopez|masters|g8e7",
                "tags" : []
             },
             {
-               "name" : "a6",
+               "name" : "Ruy Lopez: Marshall Attack",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -1877,10 +1892,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "ruy lopez|open|a7a6",
                "tags" : []
             },
             {
-               "name" : "Nf6",
+               "name" : "Ruy Lopez: Berlin Defense, l'Hermet Variation, Berlin Wall Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -2004,10 +2020,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "ruy lopez|open|g8f6",
                "tags" : []
             },
             {
-               "name" : "Bc5",
+               "name" : "Ruy Lopez: Classical Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -2125,10 +2142,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "ruy lopez|open|f8c5",
                "tags" : []
             },
             {
-               "name" : "f5",
+               "name" : "Ruy Lopez: Schliemann Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -2252,10 +2270,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "ruy lopez|open|f7f5",
                "tags" : []
             },
             {
-               "name" : "Nge7",
+               "name" : "Ruy Lopez: Cozio Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -2379,6 +2398,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "ruy lopez|open|g8e7",
                "tags" : []
             }
          ],
@@ -2392,7 +2412,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "exd4",
+               "name" : "Scotch Game: Mieses Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -2516,10 +2536,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "scotch game|masters|e5d4",
                "tags" : []
             },
             {
-               "name" : "d6",
+               "name" : "Ruy Lopez: Steinitz Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -2607,10 +2628,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "scotch game|masters|d7d6",
                "tags" : []
             },
             {
-               "name" : "Nxd4",
+               "name" : "Scotch Game: Lolli Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -2692,10 +2714,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "scotch game|masters|c6d4",
                "tags" : []
             },
             {
-               "name" : "Nf6",
+               "name" : "Scotch Game",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -2741,10 +2764,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "scotch game|masters|g8f6",
                "tags" : []
             },
             {
-               "name" : "exd4",
+               "name" : "Scotch Game: Mieses Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -2868,10 +2892,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "scotch game|open|e5d4",
                "tags" : []
             },
             {
-               "name" : "d6",
+               "name" : "Scotch Game (d6)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -2983,10 +3008,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "scotch game|open|d7d6",
                "tags" : []
             },
             {
-               "name" : "Nf6",
+               "name" : "Scotch Game (Nf6)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -3086,10 +3112,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "scotch game|open|g8f6",
                "tags" : []
             },
             {
-               "name" : "d5",
+               "name" : "Scotch Game (d5)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -3213,6 +3240,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "scotch game|open|d7d5",
                "tags" : []
             }
          ],
@@ -3226,7 +3254,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "Nf6",
+               "name" : "Vienna Game: Mieses Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -3350,10 +3378,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "vienna game|masters|g8f6",
                "tags" : []
             },
             {
-               "name" : "Nc6",
+               "name" : "Bishop's Opening: Vienna Hybrid",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -3459,10 +3488,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "vienna game|masters|b8c6",
                "tags" : []
             },
             {
-               "name" : "Bc5",
+               "name" : "Vienna Game: Anderssen Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -3526,10 +3556,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "vienna game|masters|f8c5",
                "tags" : []
             },
             {
-               "name" : "d6",
+               "name" : "Vienna Game",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -3593,10 +3624,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "vienna game|masters|d7d6",
                "tags" : []
             },
             {
-               "name" : "Nf6",
+               "name" : "Vienna Game: Vienna Gambit, Paulsen Attack",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -3720,10 +3752,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "vienna game|open|g8f6",
                "tags" : []
             },
             {
-               "name" : "Nc6",
+               "name" : "Bishop's Opening: Vienna Hybrid",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -3847,10 +3880,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "vienna game|open|b8c6",
                "tags" : []
             },
             {
-               "name" : "Bc5",
+               "name" : "Bishop's Opening: Vienna Hybrid, Spielmann Attack",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -3974,10 +4008,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "vienna game|open|f8c5",
                "tags" : []
             },
             {
-               "name" : "d6",
+               "name" : "Vienna Game",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -4101,6 +4136,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "vienna game|open|d7d6",
                "tags" : []
             }
          ],
@@ -4114,7 +4150,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "exf4",
+               "name" : "King's Gambit Accepted: Kieseritzky Gambit, Anderssen Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -4220,10 +4256,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "kings gambit|masters|e5f4",
                "tags" : []
             },
             {
-               "name" : "d5",
+               "name" : "King's Gambit Accepted: Abbazia Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -4311,10 +4348,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "kings gambit|masters|d7d5",
                "tags" : []
             },
             {
-               "name" : "Bc5",
+               "name" : "King's Gambit Declined: Classical Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -4396,10 +4434,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "kings gambit|masters|f8c5",
                "tags" : []
             },
             {
-               "name" : "Nc6",
+               "name" : "King's Gambit Declined: Miles Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -4463,10 +4502,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "kings gambit|masters|b8c6",
                "tags" : []
             },
             {
-               "name" : "exf4",
+               "name" : "King's Gambit Accepted: Hanstein Gambit",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -4584,10 +4624,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "kings gambit|open|e5f4",
                "tags" : []
             },
             {
-               "name" : "d5",
+               "name" : "King's Gambit Accepted: Abbazia Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -4711,10 +4752,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "kings gambit|open|d7d5",
                "tags" : []
             },
             {
-               "name" : "Nc6",
+               "name" : "King's Gambit Accepted: MacLeod Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -4808,10 +4850,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "kings gambit|open|b8c6",
                "tags" : []
             },
             {
-               "name" : "Bc5",
+               "name" : "King's Gambit Declined: Classical Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -4929,6 +4972,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "kings gambit|open|f8c5",
                "tags" : []
             }
          ],
@@ -4942,7 +4986,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "d5",
+               "name" : "Danish Gambit Declined: Sörensen Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -5066,10 +5110,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "danish gambit|masters|d7d5",
                "tags" : []
             },
             {
-               "name" : "dxc3",
+               "name" : "Danish Gambit Accepted: Schlechter Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -5133,10 +5178,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "danish gambit|masters|d4c3",
                "tags" : []
             },
             {
-               "name" : "Qe7",
+               "name" : "Danish Gambit (Qe7)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -5200,10 +5246,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "danish gambit|masters|d8e7",
                "tags" : []
             },
             {
-               "name" : "d3",
+               "name" : "Danish Gambit (d3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -5273,10 +5320,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "danish gambit|masters|d4d3",
                "tags" : []
             },
             {
-               "name" : "dxc3",
+               "name" : "Danish Gambit Accepted: Schlechter Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -5400,10 +5448,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "danish gambit|open|d4c3",
                "tags" : []
             },
             {
-               "name" : "d5",
+               "name" : "Danish Gambit Declined: Sörensen Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -5527,10 +5576,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "danish gambit|open|d7d5",
                "tags" : []
             },
             {
-               "name" : "d3",
+               "name" : "Danish Gambit (d3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -5624,10 +5674,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "danish gambit|open|d4d3",
                "tags" : []
             },
             {
-               "name" : "Qe7",
+               "name" : "Danish Gambit (Qe7)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -5739,6 +5790,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "danish gambit|open|d8e7",
                "tags" : []
             }
          ],
@@ -5752,7 +5804,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "c5",
+               "name" : "Queen's Pawn Game: London System (c5)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -5876,10 +5928,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "london system|masters|c7c5",
                "tags" : []
             },
             {
-               "name" : "e6",
+               "name" : "Queen's Pawn Game: London System (e6)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -6003,10 +6056,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "london system|masters|e7e6",
                "tags" : []
             },
             {
-               "name" : "Bf5",
+               "name" : "Queen's Pawn Game: London System (Bf5)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -6088,10 +6142,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "london system|masters|c8f5",
                "tags" : []
             },
             {
-               "name" : "c6",
+               "name" : "Queen's Pawn Game: London System (c6)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -6161,10 +6216,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "london system|masters|c7c6",
                "tags" : []
             },
             {
-               "name" : "g6",
+               "name" : "Queen's Pawn Game: London System (g6)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -6264,10 +6320,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "london system|masters|g7g6",
                "tags" : []
             },
             {
-               "name" : "c5",
+               "name" : "Queen's Pawn Game: London System (c5)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -6391,10 +6448,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "london system|open|c7c5",
                "tags" : []
             },
             {
-               "name" : "e6",
+               "name" : "Queen's Pawn Game: London System (e6)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -6518,10 +6576,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "london system|open|e7e6",
                "tags" : []
             },
             {
-               "name" : "Bf5",
+               "name" : "Queen's Pawn Game: London System (Bf5)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -6621,10 +6680,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "london system|open|c8f5",
                "tags" : []
             },
             {
-               "name" : "c6",
+               "name" : "Queen's Pawn Game: London System (c6)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -6748,10 +6808,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "london system|open|c7c6",
                "tags" : []
             },
             {
-               "name" : "g6",
+               "name" : "Queen's Pawn Game: London System (g6)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -6875,6 +6936,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "london system|open|g7g6",
                "tags" : []
             }
          ],
@@ -6888,7 +6950,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "c6",
+               "name" : "Semi-Slav Defense: Anti-Moscow Gambit",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -7012,10 +7074,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "queens gambit|masters|c7c6",
                "tags" : []
             },
             {
-               "name" : "e6",
+               "name" : "Queen's Gambit Declined: Exchange Variation, Reshevsky Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -7139,10 +7202,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "queens gambit|masters|e7e6",
                "tags" : []
             },
             {
-               "name" : "dxc4",
+               "name" : "Queen's Gambit Accepted: Furman Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -7266,10 +7330,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "queens gambit|masters|d5c4",
                "tags" : []
             },
             {
-               "name" : "Nc6",
+               "name" : "Queen's Gambit Declined: Chigorin Defense, Modern Gambit",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -7387,10 +7452,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "queens gambit|masters|b8c6",
                "tags" : []
             },
             {
-               "name" : "e5",
+               "name" : "Queen's Gambit Declined: Albin Countergambit, Fianchetto Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -7496,10 +7562,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "queens gambit|masters|e7e5",
                "tags" : []
             },
             {
-               "name" : "e6",
+               "name" : "Queen's Gambit Declined: Exchange Variation, Reshevsky Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -7623,10 +7690,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "queens gambit|open|e7e6",
                "tags" : []
             },
             {
-               "name" : "c6",
+               "name" : "Semi-Slav Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -7750,10 +7818,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "queens gambit|open|c7c6",
                "tags" : []
             },
             {
-               "name" : "dxc4",
+               "name" : "Queen's Gambit Accepted: Classical Defense, Rubinstein Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -7877,10 +7946,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "queens gambit|open|d5c4",
                "tags" : []
             },
             {
-               "name" : "e5",
+               "name" : "Queen's Gambit Declined: Albin Countergambit, Normal Line",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -7998,10 +8068,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "queens gambit|open|e7e5",
                "tags" : []
             },
             {
-               "name" : "Nf6",
+               "name" : "Queen's Gambit Declined: Marshall Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -8107,6 +8178,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "queens gambit|open|g8f6",
                "tags" : []
             }
          ],
@@ -8120,7 +8192,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "d4",
+               "name" : "Caro-Kann Defense: Advance Variation, Short Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -8244,10 +8316,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "caro-kann defence|masters|d2d4",
                "tags" : []
             },
             {
-               "name" : "Nc3",
+               "name" : "Caro-Kann Defense: Two Knights Attack, Mindeno Variation, Exchange Line (Nc3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -8371,10 +8444,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "caro-kann defence|masters|b1c3",
                "tags" : []
             },
             {
-               "name" : "Nf3",
+               "name" : "Caro-Kann Defense: Two Knights Attack, Mindeno Variation, Exchange Line (Nf3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -8498,10 +8572,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "caro-kann defence|masters|g1f3",
                "tags" : []
             },
             {
-               "name" : "c4",
+               "name" : "Caro-Kann Defense: Accelerated Panov Attack, Modern Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -8625,10 +8700,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "caro-kann defence|masters|c2c4",
                "tags" : []
             },
             {
-               "name" : "d3",
+               "name" : "Caro-Kann Defense: Breyer Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -8740,10 +8816,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "caro-kann defence|masters|d2d3",
                "tags" : []
             },
             {
-               "name" : "d4",
+               "name" : "Caro-Kann Defense: Advance Variation, Tal Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -8867,10 +8944,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "caro-kann defence|open|d2d4",
                "tags" : []
             },
             {
-               "name" : "Nf3",
+               "name" : "Caro-Kann Defense: Exchange Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -8994,10 +9072,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "caro-kann defence|open|g1f3",
                "tags" : []
             },
             {
-               "name" : "Nc3",
+               "name" : "Caro-Kann Defense: Two Knights Attack",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -9121,10 +9200,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "caro-kann defence|open|b1c3",
                "tags" : []
             },
             {
-               "name" : "c4",
+               "name" : "Caro-Kann Defense: Accelerated Panov Attack, Modern Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -9248,10 +9328,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "caro-kann defence|open|c2c4",
                "tags" : []
             },
             {
-               "name" : "d3",
+               "name" : "Caro-Kann Defense: Breyer Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -9375,6 +9456,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "caro-kann defence|open|d2d3",
                "tags" : []
             }
          ],
@@ -9388,7 +9470,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "exd5",
+               "name" : "Scandinavian Defense: Main Line, Mieses Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -9512,10 +9594,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "scandinavian defence|masters|e4d5",
                "tags" : []
             },
             {
-               "name" : "Nc3",
+               "name" : "Scandinavian Defense (Nc3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -9597,10 +9680,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "scandinavian defence|masters|b1c3",
                "tags" : []
             },
             {
-               "name" : "e5",
+               "name" : "Scandinavian Defense (e5)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -9664,10 +9748,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "scandinavian defence|masters|e4e5",
                "tags" : []
             },
             {
-               "name" : "d4",
+               "name" : "Blackmar-Diemer Gambit Accepted: Bogoljubow Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -9749,10 +9834,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "scandinavian defence|masters|d2d4",
                "tags" : []
             },
             {
-               "name" : "exd5",
+               "name" : "Scandinavian Defense: Lasker Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -9876,10 +9962,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "scandinavian defence|open|e4d5",
                "tags" : []
             },
             {
-               "name" : "Nc3",
+               "name" : "Scandinavian Defense (Nc3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -9985,10 +10072,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "scandinavian defence|open|b1c3",
                "tags" : []
             },
             {
-               "name" : "e5",
+               "name" : "Scandinavian Defense (e5)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -10112,10 +10200,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "scandinavian defence|open|e4e5",
                "tags" : []
             },
             {
-               "name" : "Nf3",
+               "name" : "Zukertort Opening: Tennison Gambit",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -10239,6 +10328,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "scandinavian defence|open|g1f3",
                "tags" : []
             }
          ],
@@ -10252,7 +10342,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "d4",
+               "name" : "French Defense: Winawer Variation, Warsaw Variation (d4)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -10376,10 +10466,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "french defence|masters|d2d4",
                "tags" : []
             },
             {
-               "name" : "d3",
+               "name" : "French Defense: King's Indian Attack",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -10461,10 +10552,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "french defence|masters|d2d3",
                "tags" : []
             },
             {
-               "name" : "Nf3",
+               "name" : "French Defense: Two Knights Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -10588,10 +10680,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "french defence|masters|g1f3",
                "tags" : []
             },
             {
-               "name" : "Qe2",
+               "name" : "French Defense: Chigorin Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -10697,10 +10790,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "french defence|masters|d1e2",
                "tags" : []
             },
             {
-               "name" : "Nc3",
+               "name" : "French Defense: Winawer Variation, Warsaw Variation (Nc3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -10824,10 +10918,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "french defence|masters|b1c3",
                "tags" : []
             },
             {
-               "name" : "d4",
+               "name" : "French Defense: Steinitz Variation, Boleslavsky Variation (d4)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -10951,10 +11046,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "french defence|open|d2d4",
                "tags" : []
             },
             {
-               "name" : "Nf3",
+               "name" : "French Defense: Exchange Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -11078,10 +11174,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "french defence|open|g1f3",
                "tags" : []
             },
             {
-               "name" : "d3",
+               "name" : "King's Indian Attack: Sicilian Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -11205,10 +11302,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "french defence|open|d2d3",
                "tags" : []
             },
             {
-               "name" : "Nc3",
+               "name" : "French Defense: Steinitz Variation, Boleslavsky Variation (Nc3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -11332,10 +11430,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "french defence|open|b1c3",
                "tags" : []
             },
             {
-               "name" : "Qe2",
+               "name" : "French Defense: Chigorin Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -11441,6 +11540,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "french defence|open|d1e2",
                "tags" : []
             }
          ],
@@ -11454,7 +11554,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "Nf3",
+               "name" : "Sicilian Defense: Najdorf Variation, English Attack",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -11578,10 +11678,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "sicilian defence|masters|g1f3",
                "tags" : []
             },
             {
-               "name" : "Nc3",
+               "name" : "Sicilian Defense: Closed",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -11705,10 +11806,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "sicilian defence|masters|b1c3",
                "tags" : []
             },
             {
-               "name" : "c3",
+               "name" : "Sicilian Defense: Alapin Variation, Smith-Morra Declined",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -11832,10 +11934,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "sicilian defence|masters|c2c3",
                "tags" : []
             },
             {
-               "name" : "d4",
+               "name" : "Sicilian Defense: Smith-Morra Gambit Accepted, Paulsen Formation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -11959,10 +12062,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "sicilian defence|masters|d2d4",
                "tags" : []
             },
             {
-               "name" : "Nf3",
+               "name" : "Sicilian Defense: Najdorf Variation, Main Line",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -12086,10 +12190,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "sicilian defence|open|g1f3",
                "tags" : []
             },
             {
-               "name" : "Nc3",
+               "name" : "Sicilian Defense: Grand Prix Attack",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -12213,10 +12318,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "sicilian defence|open|b1c3",
                "tags" : []
             },
             {
-               "name" : "c3",
+               "name" : "Sicilian Defense: Alapin Variation, Smith-Morra Declined",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -12340,10 +12446,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "sicilian defence|open|c2c3",
                "tags" : []
             },
             {
-               "name" : "d4",
+               "name" : "Sicilian Defense: Smith-Morra Gambit Accepted, Paulsen Formation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -12467,6 +12574,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "sicilian defence|open|d2d4",
                "tags" : []
             }
          ],
@@ -12480,7 +12588,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "Nc3",
+               "name" : "King's Indian Defense: Orthodox Variation, Bayonet Attack, Sokolov's Line (Nc3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -12604,10 +12712,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "kings indian defence|masters|b1c3",
                "tags" : []
             },
             {
-               "name" : "g3",
+               "name" : "King's Indian Defense: Fianchetto Variation, Panno Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -12731,10 +12840,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "kings indian defence|masters|g2g3",
                "tags" : []
             },
             {
-               "name" : "Nf3",
+               "name" : "King's Indian Defense: Orthodox Variation, Bayonet Attack, Sokolov's Line (Nf3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -12858,10 +12968,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "kings indian defence|masters|g1f3",
                "tags" : []
             },
             {
-               "name" : "f3",
+               "name" : "King's Indian Defense: Sämisch Variation, Sämisch Gambit",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -12985,10 +13096,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "kings indian defence|masters|f2f3",
                "tags" : []
             },
             {
-               "name" : "h4",
+               "name" : "Indian Defense: Anti-Grünfeld, Basman-Williams Attack",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -13064,10 +13176,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "kings indian defence|masters|h2h4",
                "tags" : []
             },
             {
-               "name" : "Nc3",
+               "name" : "King's Indian Defense: Orthodox Variation, Classical System, Neo-Classical Line (Nc3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -13191,10 +13304,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "kings indian defence|open|b1c3",
                "tags" : []
             },
             {
-               "name" : "Nf3",
+               "name" : "King's Indian Defense: Orthodox Variation, Classical System, Neo-Classical Line (Nf3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -13318,10 +13432,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "kings indian defence|open|g1f3",
                "tags" : []
             },
             {
-               "name" : "g3",
+               "name" : "King's Indian Defense: Fianchetto Variation, Uhlmann-Szabo System",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -13445,10 +13560,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "kings indian defence|open|g2g3",
                "tags" : []
             },
             {
-               "name" : "f3",
+               "name" : "King's Indian Defense: Sämisch Variation, Sämisch Gambit",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -13572,10 +13688,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "kings indian defence|open|f2f3",
                "tags" : []
             },
             {
-               "name" : "h4",
+               "name" : "Indian Defense: Anti-Grünfeld, Basman-Williams Attack",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -13681,6 +13798,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "kings indian defence|open|h2h4",
                "tags" : []
             }
          ],
@@ -13694,7 +13812,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "e3",
+               "name" : "Nimzo-Indian Defense: Normal Variation, Bernstein Defense, Exchange Line",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -13818,10 +13936,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "nimzo-indian defence|masters|e2e3",
                "tags" : []
             },
             {
-               "name" : "Qc2",
+               "name" : "Nimzo-Indian Defense: Classical Variation, Keres Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -13945,10 +14064,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "nimzo-indian defence|masters|d1c2",
                "tags" : []
             },
             {
-               "name" : "f3",
+               "name" : "Nimzo-Indian Defense: Sämisch Variation, Keres Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -14072,10 +14192,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "nimzo-indian defence|masters|f2f3",
                "tags" : []
             },
             {
-               "name" : "Nf3",
+               "name" : "Nimzo-Indian Defense: Three Knights Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -14199,10 +14320,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "nimzo-indian defence|masters|g1f3",
                "tags" : []
             },
             {
-               "name" : "Bg5",
+               "name" : "Nimzo-Indian Defense: Leningrad Variation, Benoni Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -14326,10 +14448,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "nimzo-indian defence|masters|c1g5",
                "tags" : []
             },
             {
-               "name" : "Qc2",
+               "name" : "Nimzo-Indian Defense: Classical Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -14453,10 +14576,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "nimzo-indian defence|open|d1c2",
                "tags" : []
             },
             {
-               "name" : "e3",
+               "name" : "Nimzo-Indian Defense: Normal Variation, Bernstein Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -14580,10 +14704,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "nimzo-indian defence|open|e2e3",
                "tags" : []
             },
             {
-               "name" : "Nf3",
+               "name" : "Nimzo-Indian Defense: Three Knights Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -14695,10 +14820,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "nimzo-indian defence|open|g1f3",
                "tags" : []
             },
             {
-               "name" : "f3",
+               "name" : "Nimzo-Indian Defense: Kmoch Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -14822,10 +14948,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "nimzo-indian defence|open|f2f3",
                "tags" : []
             },
             {
-               "name" : "Bd2",
+               "name" : "Nimzo-Indian Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -14949,6 +15076,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "nimzo-indian defence|open|c1d2",
                "tags" : []
             }
          ],
@@ -14962,7 +15090,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "Nc3",
+               "name" : "Queen's Gambit Declined: Exchange Variation, Reshevsky Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -15086,10 +15214,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "queens gambit declined|masters|b1c3",
                "tags" : []
             },
             {
-               "name" : "Nf3",
+               "name" : "Queen's Gambit Declined: Tartakower Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -15213,10 +15342,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "queens gambit declined|masters|g1f3",
                "tags" : []
             },
             {
-               "name" : "g3",
+               "name" : "Catalan Opening: Open Defense, Classical Line",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -15340,10 +15470,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "queens gambit declined|masters|g2g3",
                "tags" : []
             },
             {
-               "name" : "cxd5",
+               "name" : "Queen's Gambit Declined (cxd5)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -15467,10 +15598,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "queens gambit declined|masters|c4d5",
                "tags" : []
             },
             {
-               "name" : "e3",
+               "name" : "Queen's Gambit Declined (e3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -15594,10 +15726,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "queens gambit declined|masters|e2e3",
                "tags" : []
             },
             {
-               "name" : "Nc3",
+               "name" : "Queen's Gambit Declined: Exchange Variation, Reshevsky Variation (Nc3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -15721,10 +15854,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "queens gambit declined|open|b1c3",
                "tags" : []
             },
             {
-               "name" : "Nf3",
+               "name" : "Queen's Gambit Declined: Tartakower Defense, Makogonov Exchange Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -15848,10 +15982,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "queens gambit declined|open|g1f3",
                "tags" : []
             },
             {
-               "name" : "cxd5",
+               "name" : "Queen's Gambit Declined: Exchange Variation, Reshevsky Variation (cxd5)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -15975,10 +16110,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "queens gambit declined|open|c4d5",
                "tags" : []
             },
             {
-               "name" : "g3",
+               "name" : "Catalan Opening: Open Defense, Classical Line",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -16102,10 +16238,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "queens gambit declined|open|g2g3",
                "tags" : []
             },
             {
-               "name" : "e3",
+               "name" : "Queen's Gambit Declined",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -16229,6 +16366,7 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "queens gambit declined|open|e2e3",
                "tags" : []
             }
          ],
@@ -16242,7 +16380,7 @@
          "isSeed" : true,
          "lines" : [
             {
-               "name" : "Nf3",
+               "name" : "Semi-Slav Defense: Anti-Moscow Gambit",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -16366,10 +16504,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "slav defence|masters|g1f3",
                "tags" : []
             },
             {
-               "name" : "Nc3",
+               "name" : "Semi-Slav Defense: Chigorin Defense (Nc3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -16493,10 +16632,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "slav defence|masters|b1c3",
                "tags" : []
             },
             {
-               "name" : "cxd5",
+               "name" : "Slav Defense: Exchange Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -16620,10 +16760,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "slav defence|masters|c4d5",
                "tags" : []
             },
             {
-               "name" : "e3",
+               "name" : "Semi-Slav Defense: Chigorin Defense (e3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -16747,10 +16888,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "slav defence|masters|e2e3",
                "tags" : []
             },
             {
-               "name" : "g3",
+               "name" : "Slav Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -16874,10 +17016,11 @@
                   }
                ],
                "source" : "masters",
+               "stableKey" : "slav defence|masters|g2g3",
                "tags" : []
             },
             {
-               "name" : "Nc3",
+               "name" : "Semi-Slav Defense (Nc3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -17001,10 +17144,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "slav defence|open|b1c3",
                "tags" : []
             },
             {
-               "name" : "Nf3",
+               "name" : "Semi-Slav Defense (Nf3)",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -17128,10 +17272,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "slav defence|open|g1f3",
                "tags" : []
             },
             {
-               "name" : "cxd5",
+               "name" : "Slav Defense: Exchange Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -17255,10 +17400,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "slav defence|open|c4d5",
                "tags" : []
             },
             {
-               "name" : "e3",
+               "name" : "Semi-Slav Defense: Meran Variation, Wade Variation",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -17382,10 +17528,11 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "slav defence|open|e2e3",
                "tags" : []
             },
             {
-               "name" : "g3",
+               "name" : "Slav Defense",
                "plies" : [
                   {
                      "alternativeSans" : [],
@@ -17509,13 +17656,1666 @@
                   }
                ],
                "source" : "open",
+               "stableKey" : "slav defence|open|g2g3",
                "tags" : []
             }
          ],
          "name" : "slav defence",
          "rootFen" : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
          "side" : "black"
+      },
+      {
+         "description" : null,
+         "eco" : "c57",
+         "isSeed" : true,
+         "lines" : [
+            {
+               "name" : "Italian Game: Two Knights Defense, Traxler Counterattack, Bishop Sacrifice Line",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc5",
+                     "uci" : "f8c5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bxf7+",
+                     "uci" : "c4f7"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ke7",
+                     "uci" : "e8e7"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bd5",
+                     "uci" : "f7d5"
+                  }
+               ],
+               "source" : "masters",
+               "stableKey" : "traxler counter-attack|masters|c4f7",
+               "tags" : []
+            },
+            {
+               "name" : "Italian Game: Two Knights Defense, Traxler Counterattack, Knight Sacrifice Line",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc5",
+                     "uci" : "f8c5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nxf7",
+                     "uci" : "g5f7"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bxf2+",
+                     "uci" : "c5f2"
+                  }
+               ],
+               "source" : "masters",
+               "stableKey" : "traxler counter-attack|masters|g5f7",
+               "tags" : []
+            },
+            {
+               "name" : "Italian Game: Two Knights Defense, Traxler Counterattack (d4)",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc5",
+                     "uci" : "f8c5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d4",
+                     "uci" : "d2d4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d5",
+                     "uci" : "d7d5"
+                  }
+               ],
+               "source" : "masters",
+               "stableKey" : "traxler counter-attack|masters|d2d4",
+               "tags" : []
+            },
+            {
+               "name" : "Italian Game: Two Knights Defense, Traxler Counterattack (d3)",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc5",
+                     "uci" : "f8c5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d3",
+                     "uci" : "d2d3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "O-O",
+                     "uci" : "e8h8"
+                  }
+               ],
+               "source" : "masters",
+               "stableKey" : "traxler counter-attack|masters|d2d3",
+               "tags" : []
+            },
+            {
+               "name" : "Italian Game: Two Knights Defense, Traxler Counterattack, Bishop Sacrifice Line",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc5",
+                     "uci" : "f8c5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bxf7+",
+                     "uci" : "c4f7"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ke7",
+                     "uci" : "e8e7"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bb3",
+                     "uci" : "f7b3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Rf8",
+                     "uci" : "h8f8"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "O-O",
+                     "uci" : "e1h1"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d6",
+                     "uci" : "d7d6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d3",
+                     "uci" : "d2d3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bg4",
+                     "uci" : "c8g4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g5f3"
+                  }
+               ],
+               "source" : "open",
+               "stableKey" : "traxler counter-attack|open|c4f7",
+               "tags" : []
+            },
+            {
+               "name" : "Italian Game: Two Knights Defense, Traxler Counterattack, Knight Sacrifice Line",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc5",
+                     "uci" : "f8c5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nxf7",
+                     "uci" : "g5f7"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bxf2+",
+                     "uci" : "c5f2"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Kf1",
+                     "uci" : "e1f1"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Qe7",
+                     "uci" : "d8e7"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nxh8",
+                     "uci" : "f7h8"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d5",
+                     "uci" : "d7d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "exd5",
+                     "uci" : "e4d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nd4",
+                     "uci" : "c6d4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d6",
+                     "uci" : "d5d6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "cxd6",
+                     "uci" : "c7d6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Kxf2",
+                     "uci" : "f1f2"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ne4+",
+                     "uci" : "f6e4"
+                  }
+               ],
+               "source" : "open",
+               "stableKey" : "traxler counter-attack|open|g5f7",
+               "tags" : []
+            },
+            {
+               "name" : "Italian Game: Two Knights Defense, Traxler Counterattack (O-O)",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc5",
+                     "uci" : "f8c5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "O-O",
+                     "uci" : "e1h1"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "O-O",
+                     "uci" : "e8h8"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d3",
+                     "uci" : "d2d3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d6",
+                     "uci" : "d7d6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "h3",
+                     "uci" : "h2h3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "h6",
+                     "uci" : "h7h6"
+                  }
+               ],
+               "source" : "open",
+               "stableKey" : "traxler counter-attack|open|e1h1",
+               "tags" : []
+            },
+            {
+               "name" : "Italian Game: Two Knights Defense, Traxler Counterattack (d4)",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc5",
+                     "uci" : "f8c5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d4",
+                     "uci" : "d2d4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bxd4",
+                     "uci" : "c5d4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nxf7",
+                     "uci" : "g5f7"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bxf2+",
+                     "uci" : "d4f2"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Kxf2",
+                     "uci" : "e1f2"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nxe4+",
+                     "uci" : "f6e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Kg1",
+                     "uci" : "f2g1"
+                  }
+               ],
+               "source" : "open",
+               "stableKey" : "traxler counter-attack|open|d2d4",
+               "tags" : []
+            }
+         ],
+         "name" : "traxler counter-attack",
+         "rootFen" : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+         "side" : "black"
+      },
+      {
+         "description" : null,
+         "eco" : "c58",
+         "isSeed" : true,
+         "lines" : [
+            {
+               "name" : "Italian Game: Two Knights Defense, Polerio Defense, Bishop Check Line",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d5",
+                     "uci" : "d7d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "exd5",
+                     "uci" : "e4d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Na5",
+                     "uci" : "c6a5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bb5+",
+                     "uci" : "c4b5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "c6",
+                     "uci" : "c7c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "dxc6",
+                     "uci" : "d5c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "bxc6",
+                     "uci" : "b7c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bd3",
+                     "uci" : "b5d3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nd5",
+                     "uci" : "f6d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g5f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bd6",
+                     "uci" : "f8d6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "O-O",
+                     "uci" : "e1h1"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "O-O",
+                     "uci" : "e8h8"
+                  }
+               ],
+               "source" : "masters",
+               "stableKey" : "two knights polerio variation|masters|c4b5",
+               "tags" : []
+            },
+            {
+               "name" : "Italian Game: Two Knights Defense, Polerio Defense, Kieseritzky Variation",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d5",
+                     "uci" : "d7d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "exd5",
+                     "uci" : "e4d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Na5",
+                     "uci" : "c6a5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d3",
+                     "uci" : "d2d3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "h6",
+                     "uci" : "h7h6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g5f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e5e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Qe2",
+                     "uci" : "d1e2"
+                  }
+               ],
+               "source" : "masters",
+               "stableKey" : "two knights polerio variation|masters|d2d3",
+               "tags" : []
+            },
+            {
+               "name" : "Italian Game: Two Knights Defense, Polerio Defense, Bishop Check Line",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d5",
+                     "uci" : "d7d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "exd5",
+                     "uci" : "e4d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Na5",
+                     "uci" : "c6a5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bb5+",
+                     "uci" : "c4b5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "c6",
+                     "uci" : "c7c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "dxc6",
+                     "uci" : "d5c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "bxc6",
+                     "uci" : "b7c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bd3",
+                     "uci" : "b5d3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nd5",
+                     "uci" : "f6d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g5f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bd6",
+                     "uci" : "f8d6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "O-O",
+                     "uci" : "e1h1"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "O-O",
+                     "uci" : "e8h8"
+                  }
+               ],
+               "source" : "open",
+               "stableKey" : "two knights polerio variation|open|c4b5",
+               "tags" : []
+            },
+            {
+               "name" : "Italian Game: Two Knights Defense, Polerio Defense, Yankovich Variation",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d5",
+                     "uci" : "d7d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "exd5",
+                     "uci" : "e4d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Na5",
+                     "uci" : "c6a5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d3",
+                     "uci" : "d2d3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "h6",
+                     "uci" : "h7h6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g5f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e5e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Qe2",
+                     "uci" : "d1e2"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nxc4",
+                     "uci" : "a5c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "dxc4",
+                     "uci" : "d3c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc5",
+                     "uci" : "f8c5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nfd2",
+                     "uci" : "f3d2"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "O-O",
+                     "uci" : "e8h8"
+                  }
+               ],
+               "source" : "open",
+               "stableKey" : "two knights polerio variation|open|d2d3",
+               "tags" : []
+            }
+         ],
+         "name" : "two knights polerio variation",
+         "rootFen" : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+         "side" : "black"
+      },
+      {
+         "description" : null,
+         "eco" : "c57",
+         "isSeed" : true,
+         "lines" : [
+            {
+               "name" : "Italian Game: Two Knights Defense, Fritz Variation (c3)",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d5",
+                     "uci" : "d7d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "exd5",
+                     "uci" : "e4d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nd4",
+                     "uci" : "c6d4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "c3",
+                     "uci" : "c2c3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "b5",
+                     "uci" : "b7b5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bf1",
+                     "uci" : "c4f1"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nxd5",
+                     "uci" : "f6d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "cxd4",
+                     "uci" : "c3d4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Qxg5",
+                     "uci" : "d8g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bxb5+",
+                     "uci" : "f1b5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Kd8",
+                     "uci" : "e8d8"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "O-O",
+                     "uci" : "e1h1"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bb7",
+                     "uci" : "c8b7"
+                  }
+               ],
+               "source" : "masters",
+               "stableKey" : "two knights fritz variation|masters|c2c3",
+               "tags" : []
+            },
+            {
+               "name" : "Italian Game: Two Knights Defense, Fritz Variation (d6)",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d5",
+                     "uci" : "d7d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "exd5",
+                     "uci" : "e4d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nd4",
+                     "uci" : "c6d4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d6",
+                     "uci" : "d5d6"
+                  }
+               ],
+               "source" : "masters",
+               "stableKey" : "two knights fritz variation|masters|d5d6",
+               "tags" : []
+            },
+            {
+               "name" : "Italian Game: Two Knights Defense, Fritz Variation (c3)",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d5",
+                     "uci" : "d7d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "exd5",
+                     "uci" : "e4d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nd4",
+                     "uci" : "c6d4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "c3",
+                     "uci" : "c2c3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "b5",
+                     "uci" : "b7b5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bf1",
+                     "uci" : "c4f1"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nxd5",
+                     "uci" : "f6d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "cxd4",
+                     "uci" : "c3d4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Qxg5",
+                     "uci" : "d8g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bxb5+",
+                     "uci" : "f1b5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Kd8",
+                     "uci" : "e8d8"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "O-O",
+                     "uci" : "e1h1"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bb7",
+                     "uci" : "c8b7"
+                  }
+               ],
+               "source" : "open",
+               "stableKey" : "two knights fritz variation|open|c2c3",
+               "tags" : []
+            },
+            {
+               "name" : "Italian Game: Two Knights Defense, Fritz Variation (O-O)",
+               "plies" : [
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e4",
+                     "uci" : "e2e4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "e5",
+                     "uci" : "e7e5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf3",
+                     "uci" : "g1f3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nc6",
+                     "uci" : "b8c6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bc4",
+                     "uci" : "f1c4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nf6",
+                     "uci" : "g8f6"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Ng5",
+                     "uci" : "f3g5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "d5",
+                     "uci" : "d7d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "exd5",
+                     "uci" : "e4d5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nd4",
+                     "uci" : "c6d4"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "O-O",
+                     "uci" : "e1h1"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "b5",
+                     "uci" : "b7b5"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Bb3",
+                     "uci" : "c4b3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nxb3",
+                     "uci" : "d4b3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "axb3",
+                     "uci" : "a2b3"
+                  },
+                  {
+                     "alternativeSans" : [],
+                     "annotation" : null,
+                     "san" : "Nxd5",
+                     "uci" : "f6d5"
+                  }
+               ],
+               "source" : "open",
+               "stableKey" : "two knights fritz variation|open|e1h1",
+               "tags" : []
+            }
+         ],
+         "name" : "two knights fritz variation",
+         "rootFen" : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+         "side" : "black"
       }
    ],
-   "version" : 2
+   "version" : 4
 }
