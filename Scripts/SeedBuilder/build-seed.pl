@@ -127,18 +127,24 @@ sub explorer {
 
 sub walk_line {
     my ($source, $opening_name, $history_uci, $depth) = @_;
-    return [] if $depth >= $MAX_PLIES;
+    return ([], undef) if $depth >= $MAX_PLIES;
     my $cfg = $SOURCES{$source};
 
     my $query_play = @$history_uci ? join(",", @$history_uci) : "";
     my $r = explorer($source, play => $query_play, moves => 5, topGames => 0, recentGames => 0);
 
+    # Lichess Explorer attaches an `opening` object to every response
+    # carrying the canonical ECO + name for the queried position. The
+    # deepest non-null name we see while walking is the most-specific
+    # named variation reached — that's what we use as the line label.
+    my $own_named = $r->{opening}{name};
+
     my $total = ($r->{white} // 0) + ($r->{draws} // 0) + ($r->{black} // 0);
     my $threshold = $depth < $MIN_PLIES ? $cfg->{min_games_soft} : $cfg->{min_games};
-    return [] if $total < $threshold;
+    return ([], $own_named) if $total < $threshold;
 
     my $moves = $r->{moves} // [];
-    return [] unless @$moves;
+    return ([], $own_named) unless @$moves;
 
     my $top = $moves->[0];
     my $san = $top->{san};
@@ -150,8 +156,8 @@ sub walk_line {
     }
 
     my $ply = { san => $san, uci => $uci, annotation => $ann, alternativeSans => [] };
-    my $rest = walk_line($source, $opening_name, [@$history_uci, $uci], $depth + 1);
-    return [$ply, @$rest];
+    my ($rest, $deeper_named) = walk_line($source, $opening_name, [@$history_uci, $uci], $depth + 1);
+    return ([$ply, @$rest], $deeper_named // $own_named);
 }
 
 sub build_opening {
@@ -178,11 +184,38 @@ sub build_opening {
 
         logmsg("  [source=$source] got " . scalar(@candidates) . " candidate line(s) for $o->{name}");
 
+        my @pending;
         for my $c (@candidates) {
-            my $line_name  = $c->{san};
-            logmsg("  [source=$source] walking line '$line_name' for $o->{name}");
             my @line_history = (@history_uci, $c->{uci});
-            my $rest = walk_line($source, $o->{name}, \@line_history, scalar @{$o->{rootSan}} + 1);
+            my ($rest, $walk_named) = walk_line($source, $o->{name}, \@line_history, scalar @{$o->{rootSan}} + 1);
+            # Name priority chain:
+            #   1. catalogue `variationNames` override (explicit human label)
+            #   2. deepest Lichess Explorer `opening.name` seen on the walk
+            #   3. candidate SAN as a final fallback
+            # The Lichess name is the verifiable default — anyone can
+            # replay the same play sequence and check the returned
+            # opening field. The catalogue override is only needed when
+            # the API name is missing or unclear.
+            my $vmap = $o->{variationNames} // {};
+            my $line_name = $vmap->{$c->{san}} // $walk_named // $c->{san};
+            push @pending, { c => $c, rest => $rest, line_name => $line_name };
+        }
+
+        # Disambiguate same-named candidates (e.g. two different fork
+        # SANs both classifying to the same Lichess opening). Suffix the
+        # fork SAN onto each colliding name so the UI can tell them
+        # apart. Singletons get the API name unchanged.
+        my %name_count;
+        $name_count{$_->{line_name}}++ for @pending;
+        for my $p (@pending) {
+            if ($name_count{$p->{line_name}} > 1) {
+                $p->{line_name} = "$p->{line_name} ($p->{c}{san})";
+            }
+        }
+
+        for my $p (@pending) {
+            my ($c, $rest, $line_name) = ($p->{c}, $p->{rest}, $p->{line_name});
+            logmsg("  [source=$source] walking line '$line_name' for $o->{name}");
             my $root_plies = [ map { { san => $_, uci => "", annotation => undef, alternativeSans => [] } } @{$o->{rootSan}} ];
             for my $i (0 .. $#{$o->{rootSan}}) {
                 $root_plies->[$i]{uci} = $history_uci[$i];
@@ -190,11 +223,18 @@ sub build_opening {
             my $candidate_ply = { san => $c->{san}, uci => $c->{uci}, annotation => undef, alternativeSans => [] };
             my $total_plies = scalar(@$root_plies) + 1 + scalar(@$rest);
             logmsg("  [source=$source] line '$line_name' total plies=$total_plies");
+            # Stable identity that survives renames, walk shifts, and
+            # variation-name overrides. Pinned to the fork move's UCI
+            # (deterministic across runs) plus the opening / source so
+            # `SeedLoader` can upsert and preserve attached `LineProgress`
+            # across seed version bumps.
+            my $stable_key = join("|", $o->{name}, $source, $c->{uci});
             push @all_lines, {
-                name   => $line_name,
-                plies  => [@$root_plies, $candidate_ply, @$rest],
-                tags   => [],
-                source => $source,
+                name      => $line_name,
+                plies     => [@$root_plies, $candidate_ply, @$rest],
+                tags      => [],
+                source    => $source,
+                stableKey => $stable_key,
             };
         }
     }
@@ -217,11 +257,17 @@ my @openings = map {
     logmsg("[$idx/$total_openings] building $_->{name}");
     build_opening($_);
 } @{$cat->{openings}};
-my $out = { version => 2, openings => \@openings };
+my $out = { version => 4, openings => \@openings };
 
 my $tmp_path = "$OUT_PATH.tmp";
 open my $oh, ">", $tmp_path or die "write $tmp_path: $!";
-print $oh JSON::XS->new->canonical->pretty->encode($out);
+# Force the encoder into UTF-8 byte-output mode AND open the file
+# handle in raw mode so the bytes pass through verbatim. Without
+# this, non-ASCII opening names (e.g. "Sörensen Defense") landed as
+# single Latin-1 bytes (0xf6) instead of valid UTF-8 (0xc3 0xb6),
+# breaking jq + the iOS JSONDecoder on input.
+binmode $oh, ':raw';
+print $oh JSON::XS->new->utf8(1)->canonical->pretty->encode($out);
 close $oh;
 rename $tmp_path, $OUT_PATH or die "rename $tmp_path -> $OUT_PATH: $!";
 

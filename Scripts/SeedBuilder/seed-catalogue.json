@@ -16,6 +16,13 @@
     { "name": "kings indian defence",  "eco": "e60", "side": "black", "rootSan": ["d4","Nf6","c4","g6"],                 "lineCount": 5 },
     { "name": "nimzo-indian defence",  "eco": "e20", "side": "black", "rootSan": ["d4","Nf6","c4","e6","Nc3","Bb4"],     "lineCount": 5 },
     { "name": "queens gambit declined","eco": "d30", "side": "black", "rootSan": ["d4","d5","c4","e6"],                  "lineCount": 5 },
-    { "name": "slav defence",          "eco": "d10", "side": "black", "rootSan": ["d4","d5","c4","c6"],                  "lineCount": 5 }
+    { "name": "slav defence",          "eco": "d10", "side": "black", "rootSan": ["d4","d5","c4","c6"],                  "lineCount": 5 },
+
+    { "name": "traxler counter-attack",        "eco": "c57", "side": "black",
+      "rootSan": ["e4","e5","Nf3","Nc6","Bc4","Nf6","Ng5","Bc5"],          "lineCount": 4 },
+    { "name": "two knights polerio variation", "eco": "c58", "side": "black",
+      "rootSan": ["e4","e5","Nf3","Nc6","Bc4","Nf6","Ng5","d5","exd5","Na5"], "lineCount": 2 },
+    { "name": "two knights fritz variation",   "eco": "c57", "side": "black",
+      "rootSan": ["e4","e5","Nf3","Nc6","Bc4","Nf6","Ng5","d5","exd5","Nd4"], "lineCount": 2 }
   ]
 }
