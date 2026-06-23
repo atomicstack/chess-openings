@@ -33,6 +33,16 @@ final class PersistedPlayoutState {
     /// playout history; for drill snapshots it's the drill history.
     /// Same approach the project already uses for `Line.pliesData`.
     var movesData: Data
+    /// JSON-encoded `[StoredMove]` of the drill moves that preceded a
+    /// playout tear-off — i.e. the book/user moves leading up to
+    /// `startingFEN`. Lets a relaunch rebuild the drill prefix to the
+    /// exact position the playout began from, which matters now that a
+    /// playout can be started mid-line (not just at line-complete).
+    /// `nil` on drill snapshots and on legacy playout rows written
+    /// before this column existed — those fall back to replaying the
+    /// whole book line (correct, because they could only have started
+    /// at line-complete).
+    var prefixMovesData: Data?
     /// `"drill"` or `"playout"`. Optional for migration safety —
     /// rows written by earlier app versions don't have this column
     /// and are treated as playout snapshots (which is what they were).
@@ -46,6 +56,7 @@ final class PersistedPlayoutState {
         userSideRaw: String,
         engineLevel: Int,
         movesData: Data,
+        prefixMovesData: Data? = nil,
         phase: Phase = .playout,
         savedAt: Date = .init()
     ) {
@@ -55,6 +66,7 @@ final class PersistedPlayoutState {
         self.userSideRaw = userSideRaw
         self.engineLevel = engineLevel
         self.movesData = movesData
+        self.prefixMovesData = prefixMovesData
         self.phase = phase.rawValue
         self.savedAt = savedAt
     }
@@ -64,6 +76,17 @@ final class PersistedPlayoutState {
     var moves: [StoredMove] {
         get { (try? JSONDecoder().decode([StoredMove].self, from: movesData)) ?? [] }
         set { movesData = (try? JSONEncoder().encode(newValue)) ?? Data() }
+    }
+
+    /// Decoded drill prefix, or `nil` if this row predates the column
+    /// (legacy playout snapshot) or carries no prefix. `[]` on a
+    /// malformed payload is treated as "no usable prefix" by callers.
+    var prefixMoves: [StoredMove]? {
+        get {
+            guard let data = prefixMovesData else { return nil }
+            return (try? JSONDecoder().decode([StoredMove].self, from: data)) ?? []
+        }
+        set { prefixMovesData = newValue.flatMap { try? JSONEncoder().encode($0) } }
     }
 
     /// Typed view of `phase`. Defaults to `.playout` for legacy rows
