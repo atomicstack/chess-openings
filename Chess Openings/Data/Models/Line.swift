@@ -9,6 +9,11 @@ final class Line {
     var pliesData: Data                       // JSON-encoded [BookPly]
     var tagsCSV: String                       // comma-joined
     var sourceRaw: String = LineSource.masters.rawValue
+    /// Stable identity across seed versions — `<openingName>|<source>|<forkUci>`.
+    /// `SeedLoader` uses this to upsert lines on a version bump, preserving
+    /// the attached `LineProgress` (correctStreak, isLearned, mistakes, …).
+    /// Optional so older rows / user-created lines without one still decode.
+    var stableKey: String? = nil
     @Relationship(deleteRule: .cascade, inverse: \LineProgress.line) var mastery: LineProgress?
 
     var plies: [BookPly] {
@@ -29,12 +34,14 @@ final class Line {
         name: String,
         plies: [BookPly],
         tags: [String] = [],
-        source: LineSource = .masters
+        source: LineSource = .masters,
+        stableKey: String? = nil
     ) {
         self.id = id
         self.name = name
         self.pliesData = (try? JSONEncoder().encode(plies)) ?? Data()
         self.tagsCSV = tags.joined(separator: ",")
         self.sourceRaw = source.rawValue
+        self.stableKey = stableKey
     }
 }
