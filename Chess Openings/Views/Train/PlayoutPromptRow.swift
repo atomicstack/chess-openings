@@ -11,6 +11,11 @@ struct PlayoutPromptRow: View {
             Spacer()
         }
         .padding(.horizontal)
+        // Same anti-jump pin as DrillView.promptRow — keep the row
+        // height constant so transitioning into the engine-resign
+        // state (which renders accept/keep-playing buttons) doesn't
+        // shift the controls block below.
+        .frame(minHeight: 40, alignment: .leading)
     }
 
     @ViewBuilder

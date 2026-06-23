@@ -87,6 +87,21 @@ struct DrillView: View {
     var body: some View {
         VStack(spacing: 12) {
             if let s = session {
+                // Variation label moved out of the toolbar so long
+                // catalogue names like "Italian Game: Two Knights
+                // Defense, Traxler Counterattack, Bishop Sacrifice
+                // Line" can wrap to a second line and truncate
+                // cleanly. Pushes the board down a small amount —
+                // exactly what was asked for to fit the longer labels.
+                Text(line.name)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+                    .padding(.horizontal)
+                    .frame(maxWidth: .infinity)
+
                 BoardView(
                     position: playout?.position ?? s.position,
                     orientation: opening.side,
@@ -107,6 +122,13 @@ struct DrillView: View {
                     }
                 )
                 .padding(.horizontal)
+                // Keep the board width-bound (touching the side
+                // margins) even though the header strip + control rows
+                // compete for vertical space. Without this the 1:1
+                // `.fit` board flips to height-bound and shrinks,
+                // leaving gaps at the screen edges. Priority makes the
+                // flexible Spacers yield first.
+                .layoutPriority(1)
 
                 if let p = playout {
                     PlayoutPromptRow(
@@ -174,14 +196,16 @@ struct DrillView: View {
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                VStack(spacing: 1) {
-                    Text(opening.name)
-                        .font(.caption)
-                        .multilineTextAlignment(.center)
-                    Text(line.name)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
+                // Just the opening name in the toolbar — the variation
+                // name has been moved to the header strip below so long
+                // labels like "Italian Game: Two Knights Defense,
+                // Traxler Counterattack, Bishop Sacrifice Line" don't
+                // overflow the principal slot.
+                Text(opening.name)
+                    .font(.caption)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .multilineTextAlignment(.center)
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showSettingsSheet = true } label: {
@@ -261,6 +285,12 @@ struct DrillView: View {
             Spacer()
         }
         .padding(.horizontal)
+        // Pin to the tallest content height so resetting from
+        // `.lineComplete` (which renders the `.borderedProminent`
+        // "play it out →" button, ~36pt tall) to `.waitingForUser`
+        // (a plain ~20pt caption) doesn't change the row's height
+        // and therefore doesn't shift the controls block below.
+        .frame(minHeight: 40, alignment: .leading)
     }
 
     /// End-of-line banner. Text is "perfect" for a clean run, otherwise
