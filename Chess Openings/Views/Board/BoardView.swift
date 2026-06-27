@@ -221,17 +221,48 @@ struct BoardView: View {
     @ViewBuilder
     private func bestMoveArrowOverlay(cell: CGFloat) -> some View {
         if let arrow = bestMoveArrow {
-            let from = CGPoint(
-                x: (displayCol(for: arrow.from) + 0.5) * cell,
-                y: (displayRow(for: arrow.from) + 0.5) * cell
+            AnimatedMoveArrow(
+                route: arrowRoute(from: arrow.from, to: arrow.to, cell: cell),
+                cell: cell,
+                color: Color.blue.opacity(0.75),
+                // Restart the grow animation whenever the move changes.
+                animationKey: "\(arrow.from.file.number)\(arrow.from.rank.value)"
+                    + "-\(arrow.to.file.number)\(arrow.to.rank.value)"
             )
-            let to = CGPoint(
-                x: (displayCol(for: arrow.to) + 0.5) * cell,
-                y: (displayRow(for: arrow.to) + 0.5) * cell
-            )
-            MoveArrow(from: from, to: to, cell: cell)
-                .fill(Color.blue.opacity(0.75))
         }
+    }
+
+    /// The polyline the arrow follows: a straight start→end for most
+    /// moves, or an L through a corner square for knight moves (long
+    /// leg first, then the turn into the destination).
+    private func arrowRoute(from: Square, to: Square, cell: CGFloat) -> [CGPoint] {
+        let start = center(of: from, cell: cell)
+        let end = center(of: to, cell: cell)
+        if let corner = ArrowGeometry.knightCorner(
+            fromFile: from.file.number, fromRank: from.rank.value,
+            toFile: to.file.number, toRank: to.rank.value
+        ) {
+            return [start, center(fileNumber: corner.file, rankValue: corner.rank, cell: cell), end]
+        }
+        return [start, end]
+    }
+
+    private func center(of sq: Square, cell: CGFloat) -> CGPoint {
+        CGPoint(
+            x: (displayCol(for: sq) + 0.5) * cell,
+            y: (displayRow(for: sq) + 0.5) * cell
+        )
+    }
+
+    /// Pixel centre of an arbitrary file/rank (1...8), honouring board
+    /// orientation — used for the knight corner, which isn't a `Square`
+    /// we already hold.
+    private func center(fileNumber: Int, rankValue: Int, cell: CGFloat) -> CGPoint {
+        let col = orientation == .white
+            ? CGFloat(fileNumber - 1) : CGFloat(7 - (fileNumber - 1))
+        let row = orientation == .white
+            ? CGFloat(7 - (rankValue - 1)) : CGFloat(rankValue - 1)
+        return CGPoint(x: (col + 0.5) * cell, y: (row + 0.5) * cell)
     }
 
     @ViewBuilder
@@ -484,50 +515,116 @@ struct BoardView: View {
 /// exactly on `to`, with the head flared out so it reads as an arrow
 /// rather than a thicker shaft. The shaft is shortened to meet the
 /// base of the head so the two segments don't overlap visually.
+/// The board arrow as a fillable shape that follows a `route`
+/// polyline (two points for a plain move, three for an L-shaped
+/// knight move) and extends to `progress` of its full length — so
+/// animating `progress` grows the arrow out from its source. The
+/// head scales up alongside the growth and points along whichever
+/// route segment the tip currently sits on.
 private struct MoveArrow: Shape {
-    let from: CGPoint
-    let to: CGPoint
-    let cell: CGFloat
+    var route: [CGPoint]
+    var cell: CGFloat
+    var progress: CGFloat
+
+    // Driving `progress` through `animatableData` makes SwiftUI
+    // interpolate the path each frame, so `withAnimation` smoothly
+    // grows the arrow rather than snapping between lengths.
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
 
     func path(in rect: CGRect) -> Path {
+        let clamped = min(max(progress, 0), 1)
+        guard route.count >= 2 else { return Path() }
+        let fullLength = ArrowGeometry.routeLength(route)
+        guard fullLength > 0.001, clamped > 0.001 else { return Path() }
+
+        let currentLength = fullLength * clamped
+        // Head grows in from nothing as the arrow extends past a cell.
+        let headScale = min(1, currentLength / cell)
         let shaftWidth = cell * 0.32
-        let headLength = cell * 0.40
-        let headWidth = cell * 0.65
+        let headLength = cell * 0.40 * headScale
+        let headWidth = cell * 0.65 * headScale
 
-        let dx = to.x - from.x
-        let dy = to.y - from.y
-        let length = (dx * dx + dy * dy).squareRoot()
+        guard let tipInfo = ArrowGeometry.pointAtRouteDistance(
+            route, distance: currentLength
+        ) else { return Path() }
+
         var path = Path()
-        guard length > 0.001 else { return path }
 
-        let ux = dx / length
-        let uy = dy / length
-        // perpendicular unit vector (rotate +90°)
+        // Shaft: a stroked polyline from the source up to where the
+        // head begins. `strokedPath` turns the centreline into a
+        // fillable outline, which lets the shaft bend at the knight
+        // corner without hand-rolling an offset polygon.
+        let shaftEnd = max(0, currentLength - headLength)
+        if shaftEnd > 0.001 {
+            let points = ArrowGeometry.polyline(route, from: 0, to: shaftEnd)
+            if points.count >= 2 {
+                var centreline = Path()
+                centreline.move(to: points[0])
+                for point in points.dropFirst() { centreline.addLine(to: point) }
+                path.addPath(centreline.strokedPath(
+                    StrokeStyle(lineWidth: shaftWidth, lineCap: .round, lineJoin: .round)
+                ))
+            }
+        }
+
+        // Head: a triangle at the tip, aligned with the local heading.
+        let angle = tipInfo.angle
+        let tip = tipInfo.point
+        let ux = cos(angle)
+        let uy = sin(angle)
         let px = -uy
         let py = ux
-
-        let baseX = to.x - ux * headLength
-        let baseY = to.y - uy * headLength
-        let halfShaft = shaftWidth / 2
+        let baseX = tip.x - ux * headLength
+        let baseY = tip.y - uy * headLength
         let halfHead = headWidth / 2
+        var head = Path()
+        head.move(to: CGPoint(x: baseX + px * halfHead, y: baseY + py * halfHead))
+        head.addLine(to: tip)
+        head.addLine(to: CGPoint(x: baseX - px * halfHead, y: baseY - py * halfHead))
+        head.closeSubpath()
+        path.addPath(head)
 
-        let s1 = CGPoint(x: from.x + px * halfShaft, y: from.y + py * halfShaft)
-        let s2 = CGPoint(x: baseX + px * halfShaft, y: baseY + py * halfShaft)
-        let h1 = CGPoint(x: baseX + px * halfHead, y: baseY + py * halfHead)
-        let tip = to
-        let h2 = CGPoint(x: baseX - px * halfHead, y: baseY - py * halfHead)
-        let s3 = CGPoint(x: baseX - px * halfShaft, y: baseY - py * halfShaft)
-        let s4 = CGPoint(x: from.x - px * halfShaft, y: from.y - py * halfShaft)
-
-        path.move(to: s1)
-        path.addLine(to: s2)
-        path.addLine(to: h1)
-        path.addLine(to: tip)
-        path.addLine(to: h2)
-        path.addLine(to: s3)
-        path.addLine(to: s4)
-        path.closeSubpath()
         return path
+    }
+}
+
+/// Hosts the animated board arrow. Owns the growth `progress` and
+/// runs the grow → hold → re-pulse loop: snap to a short stub, grow
+/// to full over ~350ms, hold, then snap back and regrow. The hold
+/// doubles every cycle (up to ~41s) so the arrow pulses a few times
+/// to draw the eye, then settles to effectively static. Mirrors the
+/// Android `BoardArrowOverlay`. `animationKey` restarts the loop when
+/// the move changes; the task auto-cancels when the arrow disappears.
+private struct AnimatedMoveArrow: View {
+    let route: [CGPoint]
+    let cell: CGFloat
+    let color: Color
+    let animationKey: String
+
+    private static let stub: CGFloat = 0.35
+
+    @State private var progress: CGFloat = AnimatedMoveArrow.stub
+
+    var body: some View {
+        MoveArrow(route: route, cell: cell, progress: progress)
+            .fill(color)
+            .task(id: animationKey) {
+                var holdMs: UInt64 = 650
+                while !Task.isCancelled {
+                    progress = Self.stub
+                    try? await Task.sleep(for: .milliseconds(100))
+                    if Task.isCancelled { return }
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        progress = 1
+                    }
+                    try? await Task.sleep(for: .milliseconds(350))
+                    try? await Task.sleep(for: .milliseconds(holdMs))
+                    holdMs = min(holdMs * 2, 41_600)
+                }
+            }
     }
 }
 
