@@ -28,6 +28,10 @@ final class AudioService: AudioServicing {
     /// Exposed primarily for tests.
     private(set) var lastAttemptedEffect: SoundEffect? = nil
 
+    /// A move sound staged by `arm(_:)`, waiting for the board's move
+    /// animation to finish before it plays (see `flushArmed`).
+    private var armedEffect: SoundEffect? = nil
+
     init(isEnabled: @escaping () -> Bool) {
         self.isEnabled = isEnabled
         // Session config is deferred to first real play() call. Touching
@@ -52,6 +56,26 @@ final class AudioService: AudioServicing {
         configureSessionIfNeeded()
         player.currentTime = 0
         player.play()
+    }
+
+    /// Stage a move sound without playing it. The board's piece-move
+    /// animation runs ~90ms after the move is applied to the model;
+    /// arming here and flushing from the animation-completion callback
+    /// lands the sound exactly as the piece reaches its square instead
+    /// of before it has finished sliding. Only one move sound is ever
+    /// in flight (moves are >700ms apart), so a single slot suffices.
+    func arm(_ effect: SoundEffect) {
+        armedEffect = effect
+    }
+
+    /// Play and clear the armed move sound, if any. Driven by the
+    /// board's move-animation completion. A no-op when nothing is
+    /// armed, so position changes that aren't moves (undo, reset,
+    /// restore) stay silent.
+    func flushArmed() {
+        guard let effect = armedEffect else { return }
+        armedEffect = nil
+        play(effect)
     }
 
     private func configureSessionIfNeeded() {

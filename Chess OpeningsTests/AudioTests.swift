@@ -134,4 +134,54 @@ final class AudioTests: XCTestCase {
         svc.play(.capture)
         XCTAssertEqual(svc.lastAttemptedEffect, .capture)
     }
+
+    // MARK: - armed move sound (plays on animation completion)
+
+    /// Arming a move sound must NOT play it immediately — the whole
+    /// point is to defer the sound until the board's move animation
+    /// finishes, so the noise lands as the piece reaches its square.
+    @MainActor
+    func test_arm_does_not_play_immediately() {
+        let svc = AudioService(isEnabled: { true })
+        svc.arm(.capture)
+        XCTAssertEqual(svc.lastAttemptedEffect, nil)
+    }
+
+    /// Flushing plays the armed effect — this is what the board's
+    /// animation-completion callback drives.
+    @MainActor
+    func test_flushArmed_plays_the_armed_effect() {
+        let svc = AudioService(isEnabled: { true })
+        svc.arm(.capture)
+        svc.flushArmed()
+        XCTAssertEqual(svc.lastAttemptedEffect, .capture)
+    }
+
+    /// A second flush must not replay the sound — the armed slot is
+    /// cleared once played, so an unrelated later animation (undo,
+    /// reset) doesn't re-trigger the previous move's sound.
+    @MainActor
+    func test_flushArmed_clears_after_playing() {
+        let svc = AudioService(isEnabled: { true })
+        svc.arm(.moveSelf)
+        svc.flushArmed()
+        XCTAssertEqual(svc.lastAttemptedEffect, .moveSelf)
+
+        // Play an unrelated effect, then flush again with nothing
+        // armed. If the slot weren't cleared, the second flush would
+        // replay moveSelf; instead lastAttemptedEffect stays on the
+        // unrelated effect, proving the no-op.
+        svc.play(.click)
+        svc.flushArmed()
+        XCTAssertEqual(svc.lastAttemptedEffect, .click)
+    }
+
+    /// Flushing with nothing armed is a silent no-op (covers
+    /// animations that aren't moves, like undo/reset).
+    @MainActor
+    func test_flushArmed_noop_when_nothing_armed() {
+        let svc = AudioService(isEnabled: { true })
+        svc.flushArmed()
+        XCTAssertEqual(svc.lastAttemptedEffect, nil)
+    }
 }

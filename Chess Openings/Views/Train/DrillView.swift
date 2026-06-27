@@ -119,7 +119,11 @@ struct DrillView: View {
                             stopShowLine(on: s)
                             Task { await s.submit(move) }
                         }
-                    }
+                    },
+                    // Move sounds are armed in `onMoveApplied` and
+                    // played here, the instant the piece finishes
+                    // sliding to its square.
+                    onMoveAnimationCompleted: { audio?.flushArmed() }
                 )
                 .padding(.horizontal)
                 // Keep the board width-bound (touching the side
@@ -555,7 +559,9 @@ struct DrillView: View {
         })
         s.onMoveApplied = { move, pre, post, byUser in
             let sfx = SoundEffect.forMove(move, pre: pre, post: post, byUser: byUser)
-            player.play(sfx)
+            // Arm, don't play — the board fires the sound when the
+            // piece-move animation finishes (see onMoveAnimationCompleted).
+            player.arm(sfx)
         }
         s.onLineComplete = {
             player.play(.lineVictory)
@@ -866,7 +872,9 @@ struct DrillView: View {
             let sfx = SoundEffect.forMove(
                 move, pre: pre, post: post, byUser: byUser
             )
-            audio?.play(sfx)
+            // Arm, don't play — the board fires the sound when the
+            // piece-move animation finishes (see onMoveAnimationCompleted).
+            audio?.arm(sfx)
         }
         session.onUserMoveAnalysing = { [weak engineService] move, pre, post in
             guard let svc = engineService else { return }

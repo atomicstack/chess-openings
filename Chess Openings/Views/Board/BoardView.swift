@@ -54,6 +54,10 @@ struct BoardView: View {
     let moveAnnotation: MoveAnnotation?
     let moveAnnotationDurationMs: Int
     let onMove: (Move) -> Void
+    /// Fires the instant a piece-move animation finishes, so the
+    /// caller can land the move sound exactly as the piece arrives
+    /// rather than when the move was applied to the model.
+    let onMoveAnimationCompleted: () -> Void
 
     struct BestMoveArrow: Equatable {
         let from: Square
@@ -77,7 +81,8 @@ struct BoardView: View {
         bestMoveArrow: BestMoveArrow? = nil,
         moveAnnotation: MoveAnnotation? = nil,
         moveAnnotationDurationMs: Int = 1500,
-        onMove: @escaping (Move) -> Void = { _ in }
+        onMove: @escaping (Move) -> Void = { _ in },
+        onMoveAnimationCompleted: @escaping () -> Void = {}
     ) {
         self.position = position
         self.orientation = orientation
@@ -86,6 +91,7 @@ struct BoardView: View {
         self.moveAnnotation = moveAnnotation
         self.moveAnnotationDurationMs = moveAnnotationDurationMs
         self.onMove = onMove
+        self.onMoveAnimationCompleted = onMoveAnimationCompleted
     }
 
     var body: some View {
@@ -392,10 +398,27 @@ struct BoardView: View {
             return
         }
         let next = Self.reconcile(old: pieceTokens, against: target)
-        withAnimation(.easeOut(duration: 0.09)) {
+        withAnimation(.easeOut(duration: Self.moveAnimationDuration)) {
             pieceTokens = next
         }
+        // Notify a beat later, as the slide finishes, so the caller can
+        // land the move sound when the piece reaches its square. A plain
+        // main-actor delay is used deliberately rather than
+        // `withAnimation(completionCriteria:)` — that completion API,
+        // driven off a `ForEach` whose membership changes per move, was
+        // implicated in a hard-to-reproduce fault after engine replies.
+        // The delay matches the animation duration, so the sound still
+        // lands within a frame of the piece arriving.
+        let notify = onMoveAnimationCompleted
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(Self.moveAnimationDuration))
+            notify()
+        }
     }
+
+    /// Duration of the piece-slide animation. Shared so the move-sound
+    /// completion delay stays in lock-step with the visual motion.
+    private static let moveAnimationDuration: Double = 0.09
 
     private func currentPieces() -> [PieceEntry] {
         var result: [PieceEntry] = []
