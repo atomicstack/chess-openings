@@ -41,3 +41,118 @@ func TestMarshal_Deterministic(t *testing.T) {
 		t.Fatalf("invalid json: %v", err)
 	}
 }
+
+// TestMarshal_JSONShapeAndNullability is a schema regression test: this
+// package defines the frozen JSON shape a future Swift Decodable will parse,
+// so every array field must render as `[]` when empty (never `null`), and
+// `mateIn` must remain the only field allowed to be `null`.
+func TestMarshal_JSONShapeAndNullability(t *testing.T) {
+	b := NewBuilder()
+	b.SetProvenance(Provenance{
+		Stockfish:         "stockfish-16",
+		Depth:             20,
+		MultiPV:           3,
+		MaiaNets:          []string{"maia1100", "maia1900"},
+		LichessBuckets:    []int{1000, 1600},
+		SourceSeedVersion: 2,
+	})
+
+	mateIn := 3
+	b.Add(PositionEntry{
+		NormFEN:      "pos1",
+		OpponentSide: "black",
+		BookMove:     Move{SAN: "e4", UCI: "e2e4"},
+		Blunders: []Blunder{
+			{
+				Move:       Move{SAN: "a6", UCI: "a7a6"},
+				EvalDropCp: 250,
+				Bands:      []string{"advanced", "beginner"},
+				Plaus:      map[string]map[string]float64{"beginner": {"a7a6": 0.4}},
+				Refutation: Refutation{
+					PV:          []Move{{SAN: "Qh5", UCI: "d1h5"}, {SAN: "g6", UCI: "g7g6"}},
+					EvalAfterCp: 900,
+					MateIn:      &mateIn,
+				},
+				Lines: []string{"lineA", "lineB"},
+			},
+			{
+				Move:       Move{SAN: "h6", UCI: "h7h6"},
+				EvalDropCp: 120,
+				Refutation: Refutation{
+					EvalAfterCp: 300,
+					// PV and MateIn deliberately left zero-valued (nil).
+				},
+			},
+		},
+	})
+
+	out, err := Marshal(b.Build())
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	s := string(out)
+
+	for _, key := range []string{
+		`"version"`, `"provenance"`, `"positions"`, `"opponentSide"`, `"bookMove"`,
+		`"blunders"`, `"evalDropCp"`, `"bands"`, `"plausibility"`, `"refutation"`,
+		`"pv"`, `"evalAfterCp"`, `"mateIn"`, `"lines"`, `"maiaNets"`, `"lichessBuckets"`,
+	} {
+		if !strings.Contains(s, key) {
+			t.Errorf("expected output to contain key %s, got:\n%s", key, s)
+		}
+	}
+
+	if !strings.Contains(s, `"mateIn": 3`) {
+		t.Errorf("expected blunder a's mateIn to serialize as the number 3, got:\n%s", s)
+	}
+	if !strings.Contains(s, `"mateIn": null`) {
+		t.Errorf("expected blunder b's mateIn to serialize as null, got:\n%s", s)
+	}
+
+	// no field other than mateIn may render as null anywhere in the output —
+	// this is what protects a Swift Decodable with non-optional arrays.
+	for _, line := range strings.Split(s, "\n") {
+		if strings.Contains(line, ": null") && !strings.Contains(line, `"mateIn"`) {
+			t.Errorf("unexpected null (only mateIn may be null): %s", line)
+		}
+	}
+
+	var decoded struct {
+		Positions map[string]struct {
+			Blunders []struct {
+				Move struct {
+					UCI string `json:"uci"`
+				} `json:"move"`
+				Refutation struct {
+					PV     []Move `json:"pv"`
+					MateIn *int   `json:"mateIn"`
+				} `json:"refutation"`
+			} `json:"blunders"`
+		} `json:"positions"`
+	}
+	if err := json.Unmarshal(out, &decoded); err != nil {
+		t.Fatalf("invalid json: %v", err)
+	}
+	pos1 := decoded.Positions["pos1"]
+	if len(pos1.Blunders) != 2 {
+		t.Fatalf("expected 2 blunders (different-move append path), got %d", len(pos1.Blunders))
+	}
+	for _, bl := range pos1.Blunders {
+		if bl.Move.UCI == "h7h6" {
+			if bl.Refutation.PV == nil {
+				t.Error("blunder b's pv decoded as nil, want a non-nil empty slice")
+			}
+			if len(bl.Refutation.PV) != 0 {
+				t.Errorf("expected blunder b's pv to be empty, got %v", bl.Refutation.PV)
+			}
+			if bl.Refutation.MateIn != nil {
+				t.Errorf("expected blunder b's mateIn to be nil, got %v", *bl.Refutation.MateIn)
+			}
+		}
+		if bl.Move.UCI == "a7a6" {
+			if bl.Refutation.MateIn == nil || *bl.Refutation.MateIn != 3 {
+				t.Errorf("expected blunder a's mateIn to be 3, got %v", bl.Refutation.MateIn)
+			}
+		}
+	}
+}

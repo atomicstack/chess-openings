@@ -66,9 +66,12 @@ func (b *Builder) SetProvenance(p Provenance) { b.prov = p }
 func (b *Builder) Add(e PositionEntry) {
 	cur, ok := b.pos[e.NormFEN]
 	if !ok {
-		b.pos[e.NormFEN] = Position{OpponentSide: e.OpponentSide, BookMove: e.BookMove, Blunders: e.Blunders}
-		return
+		cur = Position{OpponentSide: e.OpponentSide, BookMove: e.BookMove}
 	}
+	// Route both the first-insert and subsequent-insert paths through the
+	// same merge-by-move logic so blunders sharing a move uci (whether
+	// arriving in this call or a prior one) get deduped identically: keep
+	// the first-seen evalDropCp/refutation, union lines/bands.
 	idx := map[string]int{}
 	for i, bl := range cur.Blunders {
 		idx[bl.Move.UCI] = i
@@ -86,7 +89,13 @@ func (b *Builder) Add(e PositionEntry) {
 }
 
 func (b *Builder) Build() Corpus {
-	return Corpus{Version: 1, Provenance: b.prov, Positions: b.pos}
+	// Snapshot the map so a later Add cannot mutate an already-returned
+	// Corpus: Positions used to alias the builder's live map directly.
+	out := make(map[string]Position, len(b.pos))
+	for k, v := range b.pos {
+		out[k] = v
+	}
+	return Corpus{Version: 1, Provenance: b.prov, Positions: out}
 }
 
 func union(a, b []string) []string {
@@ -108,21 +117,63 @@ func union(a, b []string) []string {
 // Marshal emits deterministic JSON: sorted position keys, sorted blunders (by
 // move uci), sorted bands/lines. json.Marshal already sorts map keys, so the
 // per-blunder plausibility map is stable; we only need to sort slices.
+//
+// Marshal builds a normalized copy of c rather than touching the caller's
+// slices in place — the schema is frozen for a future Swift Decodable that
+// declares non-optional arrays, so every slice field must render as `[]`
+// (never `null`) when empty. `Refutation.MateIn` is the sole nullable field.
 func Marshal(c Corpus) ([]byte, error) {
+	out := Corpus{
+		Version:    c.Version,
+		Provenance: normalizeProvenance(c.Provenance),
+		Positions:  make(map[string]Position, len(c.Positions)),
+	}
 	for k, p := range c.Positions {
-		sort.Slice(p.Blunders, func(i, j int) bool { return p.Blunders[i].Move.UCI < p.Blunders[j].Move.UCI })
-		for i := range p.Blunders {
-			sort.Strings(p.Blunders[i].Bands)
-			sort.Strings(p.Blunders[i].Lines)
-		}
-		c.Positions[k] = p
+		out.Positions[k] = normalizePosition(p)
 	}
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")
 	enc.SetEscapeHTML(false)
-	if err := enc.Encode(c); err != nil { // map keys sorted by encoder
+	if err := enc.Encode(out); err != nil { // map keys sorted by encoder
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+// copySlice returns an independent copy of s, never nil — nil or empty input
+// yields a non-nil empty slice so it marshals as `[]` rather than `null`.
+func copySlice[T any](s []T) []T {
+	out := make([]T, len(s))
+	copy(out, s)
+	return out
+}
+
+func normalizeProvenance(p Provenance) Provenance {
+	p.MaiaNets = copySlice(p.MaiaNets)
+	p.LichessBuckets = copySlice(p.LichessBuckets)
+	return p
+}
+
+func normalizePosition(p Position) Position {
+	blunders := copySlice(p.Blunders)
+	sort.Slice(blunders, func(i, j int) bool { return blunders[i].Move.UCI < blunders[j].Move.UCI })
+	for i := range blunders {
+		blunders[i] = normalizeBlunder(blunders[i])
+	}
+	p.Blunders = blunders
+	return p
+}
+
+func normalizeBlunder(bl Blunder) Blunder {
+	bl.Bands = copySlice(bl.Bands)
+	sort.Strings(bl.Bands)
+	bl.Lines = copySlice(bl.Lines)
+	sort.Strings(bl.Lines)
+	if bl.Plaus == nil {
+		bl.Plaus = map[string]map[string]float64{}
+	}
+	// PV is a move sequence — order is meaningful, never sorted.
+	bl.Refutation.PV = copySlice(bl.Refutation.PV)
+	return bl
 }
