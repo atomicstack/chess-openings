@@ -13,8 +13,17 @@ set -euo pipefail
 PROG="${HOME}/git_tree/progress-bar-3000/progress-bar-3000"
 FILE="${1:?pass the progress file the generator writes (cfg.progressPath)}"
 
-tail -n +1 -f "$FILE" | while IFS='|' read -r phase current total detail; do
-	[ -z "${total:-}" ] && continue
-	# emit control protocol: set denominator, phase label, progress value, detail text
-	printf '@set-total %s\n@phase-name %s\n@value %s\n@label %s\n' "$total" "$phase" "$current" "$detail"
-done | "$PROG" --detail=phase --tint-animation=cycle --style gradient-granular
+{
+	# `@phase-name <name>` only jumps to a phase that already exists in the
+	# renderer's phase plan (see @set-phases in the progress-bar-3000 SKILL) —
+	# it does not create one. the pipeline (internal/pipeline/pipeline.go)
+	# only ever calls progress.Emitter.Phase with a single phase, "analyse",
+	# so register that one-phase plan up front, before the first
+	# `@phase-name analyse` line below, or the renderer would reject it.
+	printf '@set-phases analyse\n'
+	tail -n +1 -f "$FILE" | while IFS='|' read -r phase current total detail; do
+		[ -z "${total:-}" ] && continue
+		# emit control protocol: phase label, denominator, progress value, detail text
+		printf '@phase-name %s\n@set-total %s\n@value %s\n@label %s\n' "$phase" "$total" "$current" "$detail"
+	done
+} | "$PROG" --detail=phase --tint-animation=cycle --style gradient-granular

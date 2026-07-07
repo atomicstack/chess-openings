@@ -50,12 +50,21 @@ func TestRun_ProducesBlunderForSevereMove(t *testing.T) {
 	cfg.OpeningsJSONPath = "testdata/mini-openings.json"
 	cfg.Workers = 2
 	cfg.MinEvalDropCp = 150
+	cfg.StockfishVersion = "Stockfish 17"
 
 	c, err := Run(context.Background(), cfg, Deps{
 		Sev: fakeSev{}, Plaus: fakePlaus{}, Progress: progress.New(discard{}),
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	// Provenance.Stockfish is a direct pass-through of cfg.StockfishVersion
+	// (pipeline.go's Run -> builder.SetProvenance). This is the task's core
+	// deliverable: guard it against a future accidental edit that drops or
+	// mangles the stamp on its way from config to the built corpus.
+	if got := c.Provenance.Stockfish; got != "Stockfish 17" {
+		t.Errorf("provenance stockfish = %q, want %q", got, "Stockfish 17")
 	}
 
 	found := false

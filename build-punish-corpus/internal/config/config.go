@@ -19,11 +19,11 @@ type Config struct {
 	ProgressPath     string `json:"progressPath"` // "" => stderr
 
 	// concurrency / engine
-	Workers           int    `json:"workers"`
-	HashMB            int    `json:"hashMB"`
-	StockfishDepth    int    `json:"stockfishDepth"`
-	StockfishVersion  string `json:"stockfishVersion"` // version string for provenance (e.g., "Stockfish 17")
-	MultiPV           int    `json:"multiPV"`
+	Workers          int    `json:"workers"`
+	HashMB           int    `json:"hashMB"`
+	StockfishDepth   int    `json:"stockfishDepth"`
+	StockfishVersion string `json:"stockfishVersion"` // version string for provenance (e.g., "Stockfish 17")
+	MultiPV          int    `json:"multiPV"`
 
 	// severity gate & selection
 	MinEvalDropCp          int `json:"minEvalDropCp"`

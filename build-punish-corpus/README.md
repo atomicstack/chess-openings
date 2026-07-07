@@ -19,7 +19,7 @@ a single-threaded Stockfish binary (e.g., `Stockfish 17`, `Stockfish 18`) that u
 
 lc0 (Leela Chess Zero) is used during plausibility analysis. you need:
 
-- **lc0 binary** — supports UCI `go depth <n>` queries
+- **lc0 binary** — supports UCI `go nodes <n>` queries (the pipeline runs a policy-only query, not a depth-limited search)
 - **Maia weights** — neural-network files for evaluating move quality at different rating levels (e.g., `maia-1900.onnx`, `maia-1500.onnx`)
 
 **key config fields:**
@@ -126,13 +126,19 @@ go run ./cmd/build-corpus --config config.json
 
 the watcher tails the progress file and renders phase / progress / detail via progress-bar-3000. it updates in real-time as the pipeline emits progress lines.
 
+**ordering matters:** start the pipeline (step 2) before the watcher (step 3). the watcher's `tail -f` needs the progress file to exist, and the pipeline creates it as soon as it emits its first progress line — starting the watcher first just means it waits for that file to appear.
+
+**the watcher does not exit on its own** when the pipeline finishes — `tail -f` (and the progress-bar-3000 renderer behind it) keeps running until you stop it. once the run is done, `Ctrl-C` the watcher's tmux pane to stop it.
+
 ## determinism & reproducibility
 
-the pipeline is fully deterministic:
+the pipeline is fully deterministic, even though it runs concurrently:
 
-- **single-threaded stockfish engine** — Stockfish is queried serially (one UCI command at a time through a single-stream connection) to avoid race conditions on the shared response stream. all queries are at a **fixed depth** (set by `stockfishDepth`), so re-running with the same binary/depth/config produces identical blunder severity scores.
-- **lc0 queries are deterministic** — each candidate move is evaluated at a fixed depth against the Maia network specified for each rating band, with no randomization.
-- **sorted JSON output** — positions are sorted by normalized FEN, blunders within each position are sorted by move UCI, and all output arrays are deterministically ordered. **re-running with the same Stockfish binary version, Maia weights, Lichess data, and config produces a byte-identical output file** (down to whitespace).
+- **a pool of concurrent, single-threaded Stockfish engines** — the pipeline spins up `workers` (default: CPU count) separate Stockfish processes (see `cmd/build-corpus/deps.go`), each configured with `Threads 1` and searched to the fixed `stockfishDepth`. determinism does **not** come from serializing queries through one shared connection — it comes from each engine's single-threaded, fixed-depth search being independently reproducible, regardless of how many run concurrently or how the goroutine scheduler happens to interleave the `errgroup` worker pool (`internal/pipeline/pipeline.go`'s `analyse` phase, bounded by `g.SetLimit(cfg.Workers)`).
+- **lc0/Maia plausibility uses a fixed node count, not a depth-limited search** — `internal/maia/maia.go` sends `go nodes 1` (policy-only) against each rating band's Maia network, so plausibility is read straight off the policy head rather than the result of a variable-depth search. no randomization.
+- **sorted JSON output** — `internal/corpus/corpus.go`'s `Marshal` sorts position keys, sorts each position's blunders by move UCI, and sorts band/line arrays before encoding; combined with `encoding/json` already sorting map keys, the file is deterministically ordered from top to bottom.
+
+**re-running with the same Stockfish binary, `stockfishDepth`, and config produces a byte-identical `punish-corpus.json`, regardless of `workers` or how the goroutine scheduler interleaves the worker pool.**
 
 to verify reproducibility:
 1. run the pipeline once with your config and note the `stockfishVersion` value
