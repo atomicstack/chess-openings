@@ -30,7 +30,14 @@ func New(eng uci.Engine, depth, multiPV int) *Analyzer {
 // after the book move and after the candidate move respectively. Cp is
 // CandCp - BookCp: positive means the candidate is worse for the opponent
 // (better for the user), i.e. a losing move.
-type EvalDrop struct{ Cp, BookCp, CandCp int }
+type EvalDrop struct {
+	Cp, BookCp, CandCp int
+	// LeadsToMate is true when the position after the candidate move is a
+	// forced mate in the user's favor (the user is the side to move there).
+	// Such blunders are kept as bonus punish content even when their Cp drop
+	// blows past the material self-immolation ceiling.
+	LeadsToMate bool
+}
 
 // Severity evaluates the position after the book move and after the
 // candidate move. Both of those positions have the same side to move (the
@@ -50,16 +57,16 @@ func (a *Analyzer) Severity(ctx context.Context, slotFEN, bookUCI, candUCI strin
 		return EvalDrop{}, fmt.Errorf("apply candidate move %s at %s: %w", candUCI, slotFEN, err)
 	}
 
-	bookCp, err := a.topCp(ctx, bookFEN)
+	bookCp, _, err := a.topCp(ctx, bookFEN)
 	if err != nil {
 		return EvalDrop{}, err
 	}
-	candCp, err := a.topCp(ctx, candFEN)
+	candCp, candMate, err := a.topCp(ctx, candFEN)
 	if err != nil {
 		return EvalDrop{}, err
 	}
 
-	return EvalDrop{Cp: candCp - bookCp, BookCp: bookCp, CandCp: candCp}, nil
+	return EvalDrop{Cp: candCp - bookCp, BookCp: bookCp, CandCp: candCp, LeadsToMate: candMate}, nil
 }
 
 // Refutation is the user's best line at the position immediately after the
@@ -90,25 +97,24 @@ func (a *Analyzer) Refute(ctx context.Context, postBlunderFEN string) (Refutatio
 	}, nil
 }
 
-// topCp asks for a single line at fen and returns its score in centipawns,
-// converting a mate score to a large-magnitude cp value so mate-vs-mate and
-// mate-vs-cp comparisons both stay ordinally correct (shorter mates for the
-// side to move rank above longer ones, and any mate outranks any plain cp
-// score).
-func (a *Analyzer) topCp(ctx context.Context, fen string) (int, error) {
+// topCp returns the score in centipawns and whether the side to move at fen has
+// a forced mate (mate in the side-to-move's favor). A mate is converted to a
+// large-magnitude cp value so mate-vs-mate and mate-vs-cp comparisons both stay
+// ordinally correct.
+func (a *Analyzer) topCp(ctx context.Context, fen string) (int, bool, error) {
 	lines, err := a.eng.Analyse(ctx, fen, a.depth, 1)
 	if err != nil {
-		return 0, fmt.Errorf("analyse %s: %w", fen, err)
+		return 0, false, fmt.Errorf("analyse %s: %w", fen, err)
 	}
 	if len(lines) == 0 {
-		return 0, fmt.Errorf("no analysis for %s", fen)
+		return 0, false, fmt.Errorf("no analysis for %s", fen)
 	}
 	l := lines[0]
 	if l.HasMate {
 		if l.Mate >= 0 {
-			return 100000 - l.Mate, nil
+			return 100000 - l.Mate, true, nil
 		}
-		return -100000 - l.Mate, nil
+		return -100000 - l.Mate, false, nil
 	}
-	return l.ScoreCp, nil
+	return l.ScoreCp, false, nil
 }

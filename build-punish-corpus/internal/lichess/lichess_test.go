@@ -2,8 +2,11 @@ package lichess
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"sync/atomic"
 	"testing"
 )
@@ -27,6 +30,37 @@ func TestMoves_ParsesAndComputesFreq(t *testing.T) {
 	}
 	if got := m["g8f6"].Freq; got < 0.85 || got > 0.86 {
 		t.Errorf("Nf6 freq = %.3f, want ~0.857", got)
+	}
+}
+
+func TestMoves_CacheWriteIsComplete(t *testing.T) {
+	const testFEN = "atomicfen w - -"
+	ratings := []int{1600}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"moves":[{"uci":"g8f6","white":30,"draws":10,"black":20}]}`))
+	}))
+	defer srv.Close()
+
+	dir := t.TempDir()
+	c := NewClient(srv.URL, dir, srv.Client())
+	if _, err := c.Moves(context.Background(), testFEN, ratings); err != nil {
+		t.Fatal(err)
+	}
+
+	// exactly one committed cache file (no stray temp files left behind), and it
+	// unmarshals fully (a partial O_TRUNC write would fail here).
+	path := filepath.Join(dir, c.cacheKey(testFEN, ratings)+".json")
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("cache file missing after write: %v", err)
+	}
+	var resp apiResp
+	if err := json.Unmarshal(b, &resp); err != nil {
+		t.Fatalf("cache file is not complete/valid json: %v", err)
+	}
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 1 {
+		t.Errorf("expected exactly 1 cache file, got %d (stray temp file?)", len(entries))
 	}
 }
 

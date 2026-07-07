@@ -67,25 +67,47 @@ func (b *Builder) Add(e PositionEntry) {
 	cur, ok := b.pos[e.NormFEN]
 	if !ok {
 		cur = Position{OpponentSide: e.OpponentSide, BookMove: e.BookMove}
+	} else if e.BookMove.UCI < cur.BookMove.UCI {
+		// Resolve competing book continuations deterministically (independent of
+		// which worker's Add landed first): the lexicographically smaller move
+		// uci always wins. A v1 simplification — deterministic beats
+		// lossy-but-random when sibling lines diverge at a transposition.
+		cur.BookMove = e.BookMove
 	}
 	// Route both the first-insert and subsequent-insert paths through the
 	// same merge-by-move logic so blunders sharing a move uci (whether
-	// arriving in this call or a prior one) get deduped identically: keep
-	// the first-seen evalDropCp/refutation, union lines/bands.
+	// arriving in this call or a prior one) get deduped identically:
+	// order-insensitive scalar resolution, union lines/bands.
 	idx := map[string]int{}
 	for i, bl := range cur.Blunders {
 		idx[bl.Move.UCI] = i
 	}
 	for _, bl := range e.Blunders {
 		if i, seen := idx[bl.Move.UCI]; seen {
-			cur.Blunders[i].Lines = union(cur.Blunders[i].Lines, bl.Lines)
-			cur.Blunders[i].Bands = union(cur.Blunders[i].Bands, bl.Bands)
+			cur.Blunders[i] = mergeBlunder(cur.Blunders[i], bl)
 		} else {
 			idx[bl.Move.UCI] = len(cur.Blunders)
 			cur.Blunders = append(cur.Blunders, bl)
 		}
 	}
 	b.pos[e.NormFEN] = cur
+}
+
+// mergeBlunder combines two entries for the SAME move uci order-insensitively:
+// the scalar fields (EvalDropCp, Refutation, Plaus) are taken from whichever
+// entry has the smaller EvalDropCp, tie-broken by the smaller
+// Refutation.EvalAfterCp, so the result never depends on Add order; Lines and
+// Bands are unioned.
+func mergeBlunder(a, b Blunder) Blunder {
+	winner := a
+	if b.EvalDropCp < a.EvalDropCp ||
+		(b.EvalDropCp == a.EvalDropCp && b.Refutation.EvalAfterCp < a.Refutation.EvalAfterCp) {
+		winner = b
+	}
+	out := winner
+	out.Lines = union(a.Lines, b.Lines)
+	out.Bands = union(a.Bands, b.Bands)
+	return out
 }
 
 func (b *Builder) Build() Corpus {

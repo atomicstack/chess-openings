@@ -48,6 +48,100 @@ func SideToMove(fen string) Side {
 	return White
 }
 
+// Castling UCI convention: the ChessKit-based iOS app (and the seed
+// openings.json) encode castling as KING-TO-ROOK UCI (e1h1, e1a1, e8h8, e8a8),
+// whereas github.com/corentings/chess/v2 only speaks STANDARD UCI (e1g1, e1c1,
+// e8g8, e8c8). These maps and the two converters below bridge the two so the
+// library-facing helpers can normalize on input and the pipeline can
+// denormalize on output.
+var kingToRookToStandardCastle = map[string]string{
+	"e1h1": "e1g1", // white O-O
+	"e1a1": "e1c1", // white O-O-O
+	"e8h8": "e8g8", // black O-O
+	"e8a8": "e8c8", // black O-O-O
+}
+
+var standardToKingToRookCastle = map[string]string{
+	"e1g1": "e1h1",
+	"e1c1": "e1a1",
+	"e8g8": "e8h8",
+	"e8c8": "e8a8",
+}
+
+// pieceAt returns the FEN piece character on the given algebraic square (e.g.
+// "e1"), or 0 if the square is empty or either input is malformed. It parses
+// only the board (first) field of the FEN — no chess library involved.
+func pieceAt(fen, square string) byte {
+	if len(square) != 2 {
+		return 0
+	}
+	file := int(square[0] - 'a') // 0..7 for a..h
+	rank := int(square[1] - '1') // 0..7 for 1..8
+	if file < 0 || file > 7 || rank < 0 || rank > 7 {
+		return 0
+	}
+	board := fen
+	if i := strings.IndexByte(fen, ' '); i >= 0 {
+		board = fen[:i]
+	}
+	rows := strings.Split(board, "/")
+	if len(rows) != 8 {
+		return 0
+	}
+	row := rows[7-rank] // rows[0] is rank 8, rows[7] is rank 1
+	col := 0
+	for i := 0; i < len(row) && col <= file; i++ {
+		ch := row[i]
+		if ch >= '1' && ch <= '8' {
+			col += int(ch - '0')
+			continue
+		}
+		if col == file {
+			return ch
+		}
+		col++
+	}
+	return 0
+}
+
+func isKing(p byte) bool { return p == 'K' || p == 'k' }
+
+// ToStandardCastleUCI converts a king-to-rook castling UCI (e1h1/e1a1/e8h8/
+// e8a8) into the standard two-square king move (e1g1/e1c1/e8g8/e8c8) the chess
+// library expects. It only converts when the from-square actually holds a king,
+// so a rook (or other piece) move whose coordinates happen to match a castle is
+// left untouched. Any non-castling uci is returned unchanged.
+func ToStandardCastleUCI(fen, uci string) string {
+	if len(uci) < 4 {
+		return uci
+	}
+	std, ok := kingToRookToStandardCastle[uci[:4]]
+	if !ok {
+		return uci
+	}
+	if !isKing(pieceAt(fen, uci[:2])) {
+		return uci
+	}
+	return std
+}
+
+// ToChessKitCastleUCI is the inverse of ToStandardCastleUCI: it converts a
+// standard king castling move back into the king-to-rook form the ChessKit iOS
+// app consumes. Non-king or non-castling moves are returned unchanged.
+func ToChessKitCastleUCI(fen, uci string) string {
+	if len(uci) < 4 {
+		return uci
+	}
+	ktr, ok := standardToKingToRookCastle[uci[:4]]
+	if !ok {
+		return uci
+	}
+	if !isKing(pieceAt(fen, uci[:2])) {
+		return uci
+	}
+	return ktr
+}
+
 // newGameAt constructs a *chess.Game whose current position is fen.
 func newGameAt(fen string) (*chess.Game, error) {
 	opt, err := chess.FEN(fen)
@@ -68,17 +162,21 @@ func Walk(rootFEN string, uciPlies []string) ([]Step, error) {
 	for i, u := range uciPlies {
 		pre := g.Position()
 		preFEN := pre.String()
-		san, err := SANForUCI(preFEN, u)
+		// Normalize king-to-rook castling (seed convention) to the standard UCI
+		// the library speaks, and store the STANDARD form in Step.MoveUCI so
+		// downstream slots stay comparable to LegalMovesUCI output.
+		std := ToStandardCastleUCI(preFEN, u)
+		san, err := SANForUCI(preFEN, std)
 		if err != nil {
 			return nil, fmt.Errorf("ply %d (%s): %w", i, u, err)
 		}
 		steps = append(steps, Step{
 			FEN:       preFEN,
 			MoverSide: SideToMove(preFEN),
-			MoveUCI:   u,
+			MoveUCI:   std,
 			MoveSAN:   san,
 		})
-		if err := g.PushNotationMove(u, chess.UCINotation{}, nil); err != nil {
+		if err := g.PushNotationMove(std, chess.UCINotation{}, nil); err != nil {
 			return nil, fmt.Errorf("apply ply %d (%s): %w", i, u, err)
 		}
 	}
@@ -92,6 +190,7 @@ func SANForUCI(fen, uci string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	uci = ToStandardCastleUCI(fen, uci)
 	mv, err := chess.UCINotation{}.Decode(g.Position(), uci)
 	if err != nil {
 		return "", err
@@ -105,6 +204,7 @@ func ApplyUCI(fen, uci string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	uci = ToStandardCastleUCI(fen, uci)
 	if err := g.PushNotationMove(uci, chess.UCINotation{}, nil); err != nil {
 		return "", err
 	}

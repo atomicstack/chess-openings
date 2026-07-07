@@ -24,6 +24,48 @@ func TestBuilder_MergesTranspositions(t *testing.T) {
 	}
 }
 
+// TestBuilder_MergeIsOrderInsensitive proves Add's conflict resolution does not
+// depend on the order workers happen to finish in: two lines reaching the same
+// NormFEN with different book moves, and a same-move blunder with divergent
+// evalDropCp, must resolve to the identical result regardless of Add order.
+func TestBuilder_MergeIsOrderInsensitive(t *testing.T) {
+	entA := PositionEntry{NormFEN: "K", OpponentSide: "black",
+		BookMove: Move{UCI: "g8f6", SAN: "Nf6"},
+		Blunders: []Blunder{{Move: Move{UCI: "f6g4"}, EvalDropCp: 300,
+			Refutation: Refutation{EvalAfterCp: 500}, Lines: []string{"lineA"}}}}
+	entB := PositionEntry{NormFEN: "K", OpponentSide: "black",
+		BookMove: Move{UCI: "b8c6", SAN: "Nc6"}, // lexicographically smaller uci
+		Blunders: []Blunder{{Move: Move{UCI: "f6g4"}, EvalDropCp: 250,
+			Refutation: Refutation{EvalAfterCp: 400}, Lines: []string{"lineB"}}}}
+
+	forward := NewBuilder()
+	forward.Add(entA)
+	forward.Add(entB)
+	fp := forward.Build().Positions["K"]
+
+	reverse := NewBuilder()
+	reverse.Add(entB)
+	reverse.Add(entA)
+	rp := reverse.Build().Positions["K"]
+
+	if fp.BookMove.UCI != rp.BookMove.UCI {
+		t.Errorf("bookMove depends on Add order: forward=%q reverse=%q", fp.BookMove.UCI, rp.BookMove.UCI)
+	}
+	if fp.BookMove.UCI != "b8c6" {
+		t.Errorf("bookMove = %q, want the lexicographically smaller %q", fp.BookMove.UCI, "b8c6")
+	}
+	if len(fp.Blunders) != 1 || len(rp.Blunders) != 1 {
+		t.Fatalf("blunders should merge to 1, got fwd=%d rev=%d", len(fp.Blunders), len(rp.Blunders))
+	}
+	if fp.Blunders[0].EvalDropCp != rp.Blunders[0].EvalDropCp {
+		t.Errorf("evalDropCp depends on Add order: forward=%d reverse=%d",
+			fp.Blunders[0].EvalDropCp, rp.Blunders[0].EvalDropCp)
+	}
+	if fp.Blunders[0].EvalDropCp != 250 {
+		t.Errorf("evalDropCp = %d, want the smaller %d", fp.Blunders[0].EvalDropCp, 250)
+	}
+}
+
 func TestMarshal_Deterministic(t *testing.T) {
 	b := NewBuilder()
 	b.Add(PositionEntry{NormFEN: "z", OpponentSide: "white", BookMove: Move{UCI: "a"}})

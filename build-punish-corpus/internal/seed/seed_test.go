@@ -64,6 +64,52 @@ func TestEnumerateSlots_BlackSideOpening(t *testing.T) {
 	}
 }
 
+func TestEnumerateSlots_HandlesKingToRookCastling(t *testing.T) {
+	// white-side opening => opponent is black; the line has black castle
+	// kingside in king-to-rook form (e8h8), which corentings rejects unless
+	// EnumerateSlots (via chessx.Walk) normalizes it to standard UCI first.
+	castleSeed := Seed{
+		Version: 4,
+		Openings: []Opening{
+			{
+				Name:    "italian game",
+				ECO:     "c50",
+				Side:    "white",
+				RootFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+				Lines: []Line{
+					{
+						Name:      "black castles",
+						StableKey: "italian|black-castles",
+						Plies: []Ply{
+							{UCI: "e2e4", SAN: "e4"}, {UCI: "e7e5", SAN: "e5"},
+							{UCI: "g1f3", SAN: "Nf3"}, {UCI: "b8c6", SAN: "Nc6"},
+							{UCI: "f1c4", SAN: "Bc4"}, {UCI: "g8f6", SAN: "Nf6"},
+							{UCI: "d2d3", SAN: "d3"}, {UCI: "f8e7", SAN: "Be7"},
+							{UCI: "b1c3", SAN: "Nc3"}, {UCI: "e8h8", SAN: "O-O"},
+						},
+					},
+				},
+			},
+		},
+	}
+	slots, err := EnumerateSlots(castleSeed)
+	if err != nil {
+		t.Fatalf("EnumerateSlots should handle king-to-rook castling, got %v", err)
+	}
+	var found bool
+	for _, sl := range slots {
+		if sl.BookMoveSAN == "O-O" {
+			found = true
+			if sl.BookMoveUCI != "e8g8" {
+				t.Errorf("castle slot BookMoveUCI = %q, want standard %q", sl.BookMoveUCI, "e8g8")
+			}
+		}
+	}
+	if !found {
+		t.Errorf("expected a slot with the black O-O book move, got %d slots", len(slots))
+	}
+}
+
 func TestEnumerateSlots_RejectsInvalidSide(t *testing.T) {
 	invalidSeed := Seed{
 		Version: 4,

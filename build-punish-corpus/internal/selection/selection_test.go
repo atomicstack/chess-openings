@@ -47,6 +47,22 @@ func TestSelect_TagsQualifyingBandsAndCaps(t *testing.T) {
 	}
 }
 
+func TestSelect_KeepsMateAllowingBlundersAboveMax(t *testing.T) {
+	// a drop above MaxEvalDropCp is normally gated out as self-immolation, but a
+	// move that hands the user a forced mate must bypass the upper bound and be
+	// kept as bonus punish content.
+	mate := Raw{MoveUCI: "g7g5", Drop: 5000, LeadsToMate: true, PerBand: map[string]float64{"beginner": 0.4}}
+	if got := Select([]Raw{mate}, cfg()); len(got) != 1 {
+		t.Errorf("mate-leading blunder above max should be kept, got %d", len(got))
+	}
+	// the same drop WITHOUT the mate signal is still dropped by the upper bound.
+	noMate := mate
+	noMate.LeadsToMate = false
+	if got := Select([]Raw{noMate}, cfg()); len(got) != 0 {
+		t.Errorf("non-mate blunder above max should be dropped, got %+v", got)
+	}
+}
+
 func TestSelect_KeepsBoundaryDrops(t *testing.T) {
 	// gate is Drop < Min || Drop > Max (exclusive), so boundary values must be kept.
 	// min boundary: drop == 150.

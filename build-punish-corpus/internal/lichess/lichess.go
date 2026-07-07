@@ -114,6 +114,31 @@ func (c *Client) fetchCached(ctx context.Context, fen string, ratings []int) ([]
 	if err != nil {
 		return nil, err
 	}
-	_ = os.WriteFile(path, buf, 0o644)
+	writeCacheAtomic(c.cacheDir, path, buf)
 	return buf, nil
+}
+
+// writeCacheAtomic writes buf to a temp file in dir then renames it into place.
+// Rename is atomic on the same filesystem, so a concurrent reader on a cold run
+// either sees no file or the complete file — never a half-written one (an
+// O_TRUNC mid-write would otherwise yield a partial file and a failed
+// unmarshal). Best-effort: a failure just means the next miss re-fetches.
+func writeCacheAtomic(dir, path string, buf []byte) {
+	tmp, err := os.CreateTemp(dir, "cache-*.tmp")
+	if err != nil {
+		return
+	}
+	tmpName := tmp.Name()
+	if _, err := tmp.Write(buf); err != nil {
+		tmp.Close()
+		os.Remove(tmpName)
+		return
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpName)
+		return
+	}
+	if err := os.Rename(tmpName, path); err != nil {
+		os.Remove(tmpName)
+	}
 }

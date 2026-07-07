@@ -11,6 +11,10 @@ type Raw struct {
 	MoveUCI string
 	Drop    int
 	PerBand map[string]float64
+	// LeadsToMate marks a candidate that hands the user a forced mate. Such
+	// moves bypass the MaxEvalDropCp upper bound (kept as bonus punish content)
+	// but still face every other gate.
+	LeadsToMate bool
 }
 
 type Candidate struct {
@@ -23,7 +27,13 @@ type Candidate struct {
 func Select(in []Raw, cfg config.Config) []Candidate {
 	var cands []Candidate
 	for _, r := range in {
-		if r.Drop < cfg.MinEvalDropCp || r.Drop > cfg.MaxEvalDropCp {
+		if r.Drop < cfg.MinEvalDropCp {
+			continue
+		}
+		// The upper bound excludes catastrophic material self-immolation — but a
+		// blunder that allows a forced mate is desirable punish content, so it
+		// bypasses the ceiling.
+		if !r.LeadsToMate && r.Drop > cfg.MaxEvalDropCp {
 			continue
 		}
 		var qual []string

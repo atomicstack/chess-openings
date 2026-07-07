@@ -64,6 +64,81 @@ func TestApplyUCI_RejectsIllegalMove(t *testing.T) {
 	}
 }
 
+func TestCastleUCI_RoundTrip(t *testing.T) {
+	white := "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
+	black := "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R b KQkq - 0 1"
+	cases := []struct {
+		fen, kingToRook, standard string
+	}{
+		{white, "e1h1", "e1g1"}, // white O-O
+		{white, "e1a1", "e1c1"}, // white O-O-O
+		{black, "e8h8", "e8g8"}, // black O-O
+		{black, "e8a8", "e8c8"}, // black O-O-O
+	}
+	for _, c := range cases {
+		if got := ToStandardCastleUCI(c.fen, c.kingToRook); got != c.standard {
+			t.Errorf("ToStandardCastleUCI(%q) = %q, want %q", c.kingToRook, got, c.standard)
+		}
+		if got := ToChessKitCastleUCI(c.fen, c.standard); got != c.kingToRook {
+			t.Errorf("ToChessKitCastleUCI(%q) = %q, want %q", c.standard, got, c.kingToRook)
+		}
+	}
+}
+
+func TestCastleUCI_LeavesNonCastlesUnchanged(t *testing.T) {
+	white := "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
+	// a normal pawn move and a normal (non-castling) king step must pass through.
+	for _, u := range []string{"e2e4", "e1e2", "e1f1"} {
+		if got := ToStandardCastleUCI(white, u); got != u {
+			t.Errorf("ToStandardCastleUCI(%q) = %q, want unchanged", u, got)
+		}
+		if got := ToChessKitCastleUCI(white, u); got != u {
+			t.Errorf("ToChessKitCastleUCI(%q) = %q, want unchanged", u, got)
+		}
+	}
+	// king-check guard: a non-king piece whose coordinates look like a castle
+	// must NOT be converted. rook on e1, no king on e1.
+	rookFEN := "4k3/8/8/8/8/8/8/R3R3 w - - 0 1"
+	if got := ToStandardCastleUCI(rookFEN, "e1a1"); got != "e1a1" {
+		t.Errorf("rook e1a1 mis-converted to %q, want unchanged", got)
+	}
+	// empty from-square guard: e1 empty => unchanged.
+	emptyFEN := "4k3/8/8/8/8/8/8/8 w - - 0 1"
+	if got := ToStandardCastleUCI(emptyFEN, "e1h1"); got != "e1h1" {
+		t.Errorf("empty-e1 e1h1 mis-converted to %q, want unchanged", got)
+	}
+}
+
+func TestApplyUCI_AcceptsKingToRookCastle(t *testing.T) {
+	white := "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
+	got, err := ApplyUCI(white, "e1h1") // king-to-rook O-O
+	if err != nil {
+		t.Fatalf("ApplyUCI(e1h1) should succeed after normalization, got %v", err)
+	}
+	if p := pieceAt(got, "g1"); p != 'K' {
+		t.Errorf("king not on g1 after O-O: board=%q", got)
+	}
+	if p := pieceAt(got, "f1"); p != 'R' {
+		t.Errorf("rook not on f1 after O-O: board=%q", got)
+	}
+}
+
+func TestWalk_NormalizesKingToRookCastle(t *testing.T) {
+	root := "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+	// white castles kingside at ply index 6, given in king-to-rook form.
+	plies := []string{"e2e4", "e7e5", "g1f3", "b8c6", "f1c4", "g8f6", "e1h1"}
+	steps, err := Walk(root, plies)
+	if err != nil {
+		t.Fatalf("Walk over a king-to-rook castling line failed: %v", err)
+	}
+	if steps[6].MoveUCI != "e1g1" {
+		t.Errorf("Step.MoveUCI = %q, want standard %q", steps[6].MoveUCI, "e1g1")
+	}
+	if steps[6].MoveSAN != "O-O" {
+		t.Errorf("Step.MoveSAN = %q, want %q", steps[6].MoveSAN, "O-O")
+	}
+}
+
 func TestLegalMovesUCI_StartPosition(t *testing.T) {
 	start := "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 	moves, err := LegalMovesUCI(start)

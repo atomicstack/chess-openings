@@ -219,6 +219,24 @@ func TestToRefutation_ThreadsMultiMovePV(t *testing.T) {
 	}
 }
 
+// TestToRefutation_EmitsKingToRookCastle proves the corpus OUTPUT uci for a
+// castling PV move is king-to-rook (e1h1), matching the ChessKit convention the
+// iOS app consumes, even though stockfish/corentings speak standard UCI (e1g1).
+func TestToRefutation_EmitsKingToRookCastle(t *testing.T) {
+	postFEN := "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
+	ref := stockfish.Refutation{PV: []string{"e1g1"}, EvalAfterCp: 120} // standard UCI in, king-to-rook out
+	got := toRefutation(postFEN, ref)
+	if len(got.PV) != 1 {
+		t.Fatalf("PV length = %d, want 1", len(got.PV))
+	}
+	if got.PV[0].UCI != "e1h1" {
+		t.Errorf("refutation PV uci = %q, want king-to-rook %q", got.PV[0].UCI, "e1h1")
+	}
+	if got.PV[0].SAN != "O-O" {
+		t.Errorf("refutation PV san = %q, want %q", got.PV[0].SAN, "O-O")
+	}
+}
+
 func equalStrings(a, b []string) bool {
 	if len(a) != len(b) {
 		return false

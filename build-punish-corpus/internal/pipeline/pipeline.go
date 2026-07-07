@@ -168,7 +168,7 @@ func processSlot(ctx context.Context, cfg config.Config, dep Deps, sl seed.Slot)
 		if err != nil {
 			return nil, fmt.Errorf("severity %s: %w", mv, err)
 		}
-		raws = append(raws, selection.Raw{MoveUCI: mv, Drop: drop.Cp, PerBand: perBand})
+		raws = append(raws, selection.Raw{MoveUCI: mv, Drop: drop.Cp, PerBand: perBand, LeadsToMate: drop.LeadsToMate})
 		meta[mv] = m
 	}
 
@@ -192,7 +192,9 @@ func processSlot(ctx context.Context, cfg config.Config, dep Deps, sl seed.Slot)
 			return nil, fmt.Errorf("san %s: %w", c.MoveUCI, err)
 		}
 		blunders = append(blunders, corpus.Blunder{
-			Move:       corpus.Move{UCI: c.MoveUCI, SAN: san},
+			// Denormalize standard castling UCI back to king-to-rook for the
+			// ChessKit-based iOS app that consumes the corpus.
+			Move:       corpus.Move{UCI: chessx.ToChessKitCastleUCI(sl.RawFEN, c.MoveUCI), SAN: san},
 			EvalDropCp: c.EvalDropCp,
 			Bands:      c.Bands,
 			Plaus:      meta[c.MoveUCI],
@@ -204,7 +206,7 @@ func processSlot(ctx context.Context, cfg config.Config, dep Deps, sl seed.Slot)
 	return &corpus.PositionEntry{
 		NormFEN:      sl.NormFEN,
 		OpponentSide: string(sl.OpponentSide),
-		BookMove:     corpus.Move{UCI: sl.BookMoveUCI, SAN: sl.BookMoveSAN},
+		BookMove:     corpus.Move{UCI: chessx.ToChessKitCastleUCI(sl.RawFEN, sl.BookMoveUCI), SAN: sl.BookMoveSAN},
 		Blunders:     blunders,
 	}, nil
 }
@@ -233,7 +235,9 @@ func toRefutation(postFEN string, r stockfish.Refutation) corpus.Refutation {
 			// truncated; an empty SAN is a visible signal something's off.
 			san = ""
 		}
-		pv = append(pv, corpus.Move{UCI: u, SAN: san})
+		// Emit king-to-rook castling UCI for the ChessKit app; keep threading
+		// the standard `u` through ApplyUCI/SAN so the internal walk stays valid.
+		pv = append(pv, corpus.Move{UCI: chessx.ToChessKitCastleUCI(fen, u), SAN: san})
 		next, err := chessx.ApplyUCI(fen, u)
 		if err != nil {
 			break

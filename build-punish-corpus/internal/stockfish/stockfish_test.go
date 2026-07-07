@@ -33,6 +33,34 @@ func TestSeverity_CandidateWorseThanBook(t *testing.T) {
 	}
 }
 
+func TestSeverity_CandidateAllowsMateForUser(t *testing.T) {
+	// slot is black to move => opponent is black, user is white. after the
+	// candidate reply it is white (the user) to move, and the fake reports a
+	// forced mate for the side to move => a mate FOR THE USER.
+	slot := "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3"
+	book := "g8f6"
+	cand := "f8c5"
+
+	fenBook, _ := chessx.ApplyUCI(slot, book)
+	fenCand, _ := chessx.ApplyUCI(slot, cand)
+
+	f := uci.NewFake()
+	f.Script[fenBook] = []uci.Line{{Rank: 1, ScoreCp: 20}}
+	f.Script[fenCand] = []uci.Line{{Rank: 1, HasMate: true, Mate: 3}} // user mates in 3
+	a := New(f, 22, 1)
+
+	d, err := a.Severity(context.Background(), slot, book, cand)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !d.LeadsToMate {
+		t.Errorf("LeadsToMate = false, want true (candidate hands the user a forced mate)")
+	}
+	if d.Cp < 90000 {
+		t.Errorf("Cp = %d, want a large-positive mate-backed drop", d.Cp)
+	}
+}
+
 func TestRefute_ReturnsTopPV(t *testing.T) {
 	post := "some/fen w - - 0 1"
 	f := uci.NewFake()
