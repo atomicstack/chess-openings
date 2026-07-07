@@ -7,7 +7,9 @@ package pipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"sort"
 	"sync"
 
@@ -57,6 +59,13 @@ type Deps struct {
 // merge in their results, but the builder itself is only Build()'t once, at
 // the end, after every worker has finished (errgroup.Wait returns once all
 // goroutines have completed or the group's context is cancelled).
+//
+// A single slot failing (e.g. a transient lichess HTTP 429) must not abort a
+// multi-hour batch and discard every already-completed slot. So a per-slot
+// processing error is skipped (logged to stderr, counted, slot contributes
+// nothing to the corpus) rather than failing the group — UNLESS the error is
+// the context itself being cancelled or timing out, in which case the whole
+// run legitimately has to stop (ctrl-c must still work).
 func Run(ctx context.Context, cfg config.Config, dep Deps) (corpus.Corpus, error) {
 	s, err := seed.Load(cfg.OpeningsJSONPath)
 	if err != nil {
@@ -78,6 +87,7 @@ func Run(ctx context.Context, cfg config.Config, dep Deps) (corpus.Corpus, error
 		LichessBuckets:    lichessBuckets,
 	})
 	var mu sync.Mutex
+	var skipped int
 
 	g, gctx := errgroup.WithContext(ctx)
 	g.SetLimit(cfg.Workers)
@@ -87,7 +97,19 @@ func Run(ctx context.Context, cfg config.Config, dep Deps) (corpus.Corpus, error
 			entry, err := processSlot(gctx, cfg, dep, sl)
 			dep.Progress.Tick(sl.BookMoveSAN)
 			if err != nil {
-				return fmt.Errorf("slot %s (%s): %w", sl.LineKey, sl.BookMoveSAN, err)
+				if isContextErr(gctx, err) {
+					// Cancellation/deadline is not a per-slot problem — the whole
+					// run has to stop, so this DOES fail the group.
+					return fmt.Errorf("slot %s (%s): %w", sl.LineKey, sl.BookMoveSAN, err)
+				}
+				// Any other (processing) error: skip+log this slot only, keep
+				// the run going so a transient failure doesn't discard every
+				// other slot's completed work.
+				fmt.Fprintf(os.Stderr, "skipping slot %s: %v\n", sl.NormFEN, err)
+				mu.Lock()
+				skipped++
+				mu.Unlock()
+				return nil
 			}
 			if entry == nil {
 				return nil
@@ -101,7 +123,17 @@ func Run(ctx context.Context, cfg config.Config, dep Deps) (corpus.Corpus, error
 	if err := g.Wait(); err != nil {
 		return corpus.Corpus{}, err
 	}
+	fmt.Fprintf(os.Stderr, "completed: %d slots processed, %d skipped\n", len(slots), skipped)
 	return builder.Build(), nil
+}
+
+// isContextErr reports whether err is (or wraps) a context cancellation or
+// deadline, as opposed to an ordinary processing error. gctx.Err() is checked
+// too as a belt-and-braces fallback for the case where the context was
+// cancelled but the concrete error returned up from processSlot didn't happen
+// to wrap context.Canceled/context.DeadlineExceeded directly.
+func isContextErr(gctx context.Context, err error) bool {
+	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) || gctx.Err() != nil
 }
 
 // processSlot scores every legal opponent move at sl other than the book
