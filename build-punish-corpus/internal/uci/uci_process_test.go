@@ -81,6 +81,14 @@ func TestHelperProcess(t *testing.T) {
 				// that trips the Go runtime's own deadlock detector and
 				// crashes this helper subprocess instead of just hanging.)
 				send("info depth 10 multipv 1 score cp 25 pv e2e4 e7e5")
+			case "rawgo":
+				// Emit policy-head "info string" lines like lc0/maia, then
+				// bestmove. This tests that RawGo collects all lines raw,
+				// including ones that aren't standard "info ... pv ..." lines.
+				send("info string e2e4  (P: 45.20%) N: 1")
+				send("info string d2d4  (P: 30.10%) N: 1")
+				send("info string g1f3  (P: 10.00%) N: 1")
+				send("bestmove e2e4")
 			}
 		case cmd == "stop":
 			// ignored; the canned scripts above don't run a real search loop.
@@ -138,5 +146,71 @@ func TestAnalyse_RespectsContextCancellation(t *testing.T) {
 	// and Analyse goes back to blocking on p.out.Scan() forever.
 	if elapsed > 3*time.Second {
 		t.Fatalf("analyse took %v to respect context cancellation; want well under a second", elapsed)
+	}
+}
+
+func TestRawGo_CollectsInfoStringLines(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	p := fakeEngine(ctx, t, "rawgo")
+
+	lines, err := p.RawGo(ctx, "startpos", "nodes 1")
+	if err != nil {
+		t.Fatalf("rawgo: %v", err)
+	}
+	if len(lines) < 4 {
+		t.Fatalf("want at least 4 lines (3 policy + bestmove), got %d: %v", len(lines), lines)
+	}
+	// check that we have all the policy lines (raw, unfiltered)
+	wantPolicies := map[string]bool{
+		"info string e2e4  (P: 45.20%) N: 1": false,
+		"info string d2d4  (P: 30.10%) N: 1": false,
+		"info string g1f3  (P: 10.00%) N: 1": false,
+	}
+	for _, l := range lines {
+		if _, exists := wantPolicies[l]; exists {
+			wantPolicies[l] = true
+		}
+	}
+	for policy, found := range wantPolicies {
+		if !found {
+			t.Errorf("rawgo did not collect expected policy line: %s", policy)
+		}
+	}
+	// verify bestmove is included
+	if !strings.HasPrefix(lines[len(lines)-1], "bestmove") {
+		t.Errorf("last line should be bestmove, got: %s", lines[len(lines)-1])
+	}
+}
+
+func TestRawGo_RespectsContextCancellation(t *testing.T) {
+	// setupCtx just bounds the lifetime of the subprocess itself; it is
+	// generous so subprocess startup can't make this test flaky.
+	setupCtx, setupCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer setupCancel()
+
+	p := fakeEngine(setupCtx, t, "hang")
+
+	// rawgoCtx is the one under test: it should cut the blocking read
+	// short well before any wall-clock second passes.
+	rawgoCtx, rawgoCancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+	defer rawgoCancel()
+
+	start := time.Now()
+	_, err := p.RawGo(rawgoCtx, "startpos", "nodes 1")
+	elapsed := time.Since(start)
+
+	if err == nil {
+		t.Fatal("want a context error from rawgo, got nil")
+	}
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("want context.DeadlineExceeded, got %v", err)
+	}
+	// bounded generously above the 300ms deadline so this can't flake on a
+	// loaded ci box, but tight enough that it fails fast if rawgo doesn't
+	// respect context cancellation.
+	if elapsed > 3*time.Second {
+		t.Fatalf("rawgo took %v to respect context cancellation; want well under a second", elapsed)
 	}
 }

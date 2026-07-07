@@ -26,7 +26,7 @@ func TestParseMaiaPolicy_ExtractsPerMoveP(t *testing.T) {
 
 func TestBandProbs_BeginnerHasNoMaia(t *testing.T) {
 	s := New(nil) // beginner path must not touch the engine
-	got, err := s.BandProbs(nil, "fen", "beginner")
+	got, err := s.BandProbs(context.Background(), "fen", "beginner")
 	if err != nil {
 		t.Fatal(err)
 	}
