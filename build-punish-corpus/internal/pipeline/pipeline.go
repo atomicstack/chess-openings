@@ -80,6 +80,7 @@ func Run(ctx context.Context, cfg config.Config, dep Deps) (corpus.Corpus, error
 	maiaNets, lichessBuckets := provenanceBandUnion()
 	builder := corpus.NewBuilder()
 	builder.SetProvenance(corpus.Provenance{
+		Stockfish:         cfg.StockfishVersion,
 		Depth:             cfg.StockfishDepth,
 		MultiPV:           cfg.MultiPV,
 		SourceSeedVersion: s.Version,

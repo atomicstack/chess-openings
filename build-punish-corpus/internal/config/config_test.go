@@ -67,3 +67,25 @@ func TestLoad_WorkersClampedToOne(t *testing.T) {
 		t.Errorf("negative workers flag should clamp to 1, got %d", c.Workers)
 	}
 }
+
+func TestLoad_StockfishVersionDefaultsEmpty(t *testing.T) {
+	c := Default()
+	if c.StockfishVersion != "" {
+		t.Errorf("stockfishVersion default should be empty, got %q", c.StockfishVersion)
+	}
+}
+
+func TestLoad_StockfishVersionFromJSON(t *testing.T) {
+	dir := t.TempDir()
+	p := dir + "/c.json"
+	if err := writeFile(p, `{"stockfishVersion": "Stockfish 17"}`); err != nil {
+		t.Fatal(err)
+	}
+	c, err := Load(Flags{}, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.StockfishVersion != "Stockfish 17" {
+		t.Errorf("stockfishVersion from json: got %q, want %q", c.StockfishVersion, "Stockfish 17")
+	}
+}
