@@ -1,6 +1,11 @@
 package config
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
+
+func writeFile(p, s string) error { return os.WriteFile(p, []byte(s), 0o644) }
 
 func TestLoad_DefaultsWhenNoJSONOrFlags(t *testing.T) {
 	c, err := Load(Flags{}, "")
@@ -34,5 +39,31 @@ func TestLoad_FlagOverridesJSON(t *testing.T) {
 	}
 	if c.StockfishDepth != 18 {
 		t.Errorf("json value lost: got depth=%d, want 18", c.StockfishDepth)
+	}
+}
+
+func TestLoad_WorkersClampedToOne(t *testing.T) {
+	// Test path 1: JSON config with workers=0 and no flag override
+	dir := t.TempDir()
+	p := dir + "/c.json"
+	if err := writeFile(p, `{"workers": 0}`); err != nil {
+		t.Fatal(err)
+	}
+	c, err := Load(Flags{}, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Workers != 1 {
+		t.Errorf("workers=0 in json should clamp to 1, got %d", c.Workers)
+	}
+
+	// Test path 2: negative flag override
+	w := -3
+	c, err = Load(Flags{Workers: &w}, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Workers != 1 {
+		t.Errorf("negative workers flag should clamp to 1, got %d", c.Workers)
 	}
 }

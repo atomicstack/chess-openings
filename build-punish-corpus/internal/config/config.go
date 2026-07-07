@@ -38,7 +38,6 @@ type Config struct {
 // Flags holds only the CLI-overridable subset; nil pointer => not set.
 type Flags struct {
 	Workers          *int
-	ConfigPath       string
 	OpeningsJSONPath *string
 	OutputPath       *string
 }
@@ -87,5 +86,3 @@ func Load(f Flags, jsonPath string) (Config, error) {
 	}
 	return c, nil
 }
-
-func writeFile(p, s string) error { return os.WriteFile(p, []byte(s), 0o644) }

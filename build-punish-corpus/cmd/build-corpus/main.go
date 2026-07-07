@@ -17,7 +17,7 @@ func main() {
 	)
 	flag.Parse()
 
-	f := config.Flags{ConfigPath: *cfgPath}
+	f := config.Flags{}
 	if isFlagSet("workers") {
 		f.Workers = workers
 	}
