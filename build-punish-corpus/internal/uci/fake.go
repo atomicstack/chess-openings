@@ -2,6 +2,8 @@ package uci
 
 import "context"
 
+var _ Engine = (*Fake)(nil)
+
 // Fake returns canned analysis keyed by FEN; used by stockfish/maia unit tests.
 type Fake struct {
 	Options map[string]string
