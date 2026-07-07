@@ -6,10 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -69,11 +71,20 @@ func (c *Client) Moves(ctx context.Context, fen string, ratings []int) (map[stri
 	return out, nil
 }
 
-func (c *Client) cacheKey(fen string, ratings []int) string {
+func ratingsToStrings(ratings []int) []string {
 	rs := make([]string, len(ratings))
 	for i, r := range ratings {
 		rs[i] = strconv.Itoa(r)
 	}
+	return rs
+}
+
+func (c *Client) cacheKey(fen string, ratings []int) string {
+	// make the key order-insensitive by sorting a copy of ratings
+	sorted := make([]int, len(ratings))
+	copy(sorted, ratings)
+	sort.Ints(sorted)
+	rs := ratingsToStrings(sorted)
 	h := sha1.Sum([]byte(fen + "|" + strings.Join(rs, ",")))
 	return hex.EncodeToString(h[:])
 }
@@ -83,10 +94,7 @@ func (c *Client) fetchCached(ctx context.Context, fen string, ratings []int) ([]
 	if b, err := os.ReadFile(path); err == nil {
 		return b, nil
 	}
-	rs := make([]string, len(ratings))
-	for i, r := range ratings {
-		rs[i] = strconv.Itoa(r)
-	}
+	rs := ratingsToStrings(ratings)
 	q := url.Values{}
 	q.Set("fen", fen)
 	q.Set("ratings", strings.Join(rs, ","))
@@ -102,14 +110,9 @@ func (c *Client) fetchCached(ctx context.Context, fen string, ratings []int) ([]
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("lichess status %d", res.StatusCode)
 	}
-	buf := make([]byte, 0, 4096)
-	tmp := make([]byte, 4096)
-	for {
-		n, rerr := res.Body.Read(tmp)
-		buf = append(buf, tmp[:n]...)
-		if rerr != nil {
-			break
-		}
+	buf, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
 	}
 	_ = os.WriteFile(path, buf, 0o644)
 	return buf, nil
