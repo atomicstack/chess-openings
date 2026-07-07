@@ -7,3 +7,5 @@ DerivedData/
 Scripts/SeedBuilder/.seed-cache/
 Scripts/SeedBuilder/build-seed.log
 lichess-api-key.txt
+
+.worktrees/
