@@ -1,0 +1,6 @@
+{ "version": 4, "openings": [
+  { "name": "italian game", "eco": "c50", "side": "white",
+    "rootFen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "lines": [ { "name": "main", "stableKey": "italian game|masters|f1c4",
+      "plies": [ {"uci":"e2e4","san":"e4"}, {"uci":"e7e5","san":"e5"},
+                 {"uci":"g1f3","san":"Nf3"}, {"uci":"b8c6","san":"Nc6"} ] } ] } ] }
