@@ -1,0 +1,22 @@
+{
+  "openingsJsonPath": "../Chess Openings/Resources/openings.json",
+  "outputPath": "punish-corpus.json",
+  "stockfishPath": "/usr/local/bin/stockfish",
+  "lc0Path": "/usr/local/bin/lc0",
+  "maiaWeightsDir": "./maia-weights",
+  "lichessCacheDir": ".lichess-cache",
+  "progressPath": "",
+
+  "workers": 8,
+  "hashMB": 128,
+  "stockfishDepth": 22,
+  "multiPV": 20,
+
+  "minEvalDropCp": 150,
+  "maxEvalDropCp": 900,
+  "winThresholdCp": 150,
+  "maxBlundersPerPosition": 5,
+
+  "minLichessGames": 50,
+  "minPlausibility": 0.02
+}

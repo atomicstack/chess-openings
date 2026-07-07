@@ -1,0 +1,4 @@
+/build-corpus
+/.seed-cache/
+/.lichess-cache/
+*.out
