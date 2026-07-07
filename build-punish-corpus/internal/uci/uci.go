@@ -23,6 +23,15 @@ type Engine interface {
 	SetOption(name, value string) error
 	IsReady() error
 	Analyse(ctx context.Context, fen string, depth, multiPV int) ([]Line, error)
+
+	// RawGo sends "position fen <fen>" then "go <goArgs>" and returns every
+	// line the engine emits up to and including "bestmove", unparsed. It
+	// exists for engines (lc0/maia) whose useful output isn't a standard
+	// "info ... pv ..." line — e.g. lc0's policy-head "info string ... (P:
+	// xx%)" lines at `go nodes 1` — so callers can parse it themselves
+	// instead of forcing every Engine implementer through Analyse's
+	// info-line-shaped parsing.
+	RawGo(ctx context.Context, fen, goArgs string) ([]string, error)
 }
 
 func parseInfoLine(s string) (Line, bool) {
@@ -242,6 +251,40 @@ func (p *Process) Analyse(ctx context.Context, fen string, depth, multiPV int) (
 		}
 	}
 	return collectAnalysis(stream, multiPV), nil
+}
+
+// RawGo drives one "go <goArgs>" search and returns every line the engine
+// emits, unparsed, up to and including "bestmove". It reuses the same
+// ctx-cancellable nextLine read loop as Analyse, so it honors the same
+// post-error "Process is dead" contract documented on the Process type: a
+// non-nil error here (including ctx.Err()) means this Process must be
+// Close()'d, never reused.
+func (p *Process) RawGo(ctx context.Context, fen, goArgs string) ([]string, error) {
+	if err := p.send("position fen " + fen); err != nil {
+		return nil, err
+	}
+	if err := p.send("go " + goArgs); err != nil {
+		return nil, err
+	}
+
+	var stream []string
+	for {
+		line, ok, err := p.nextLine(ctx)
+		if err != nil {
+			// best-effort: ask the engine to stop searching before we kill it.
+			_ = p.send("stop")
+			p.kill()
+			return nil, err
+		}
+		if !ok {
+			return nil, fmt.Errorf("engine closed before %q", "bestmove")
+		}
+		stream = append(stream, line)
+		if strings.HasPrefix(line, "bestmove") {
+			break
+		}
+	}
+	return stream, nil
 }
 
 // wait reaps the subprocess exactly once, no matter how many times it (or
