@@ -37,10 +37,10 @@ func NewClient(base, cacheDir string, hc *http.Client) *Client {
 
 type apiResp struct {
 	Moves []struct {
-		UCI    string `json:"uci"`
-		White  int    `json:"white"`
-		Draws  int    `json:"draws"`
-		Black  int    `json:"black"`
+		UCI   string `json:"uci"`
+		White int    `json:"white"`
+		Draws int    `json:"draws"`
+		Black int    `json:"black"`
 	} `json:"moves"`
 }
 
