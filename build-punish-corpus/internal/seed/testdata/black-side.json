@@ -1,0 +1,6 @@
+{ "version": 4, "openings": [
+  { "name": "sicilian defense", "eco": "b20", "side": "black",
+    "rootFen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "lines": [ { "name": "main", "stableKey": "sicilian defense|masters|c7c5",
+      "plies": [ {"uci":"e2e4","san":"e4"}, {"uci":"c7c5","san":"c5"},
+                 {"uci":"g1f3","san":"Nf3"}, {"uci":"d7d6","san":"d6"} ] } ] } ] }

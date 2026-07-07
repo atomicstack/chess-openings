@@ -2,6 +2,7 @@ package seed
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/mattkoscica/chess-openings/build-punish-corpus/internal/chessx"
@@ -43,11 +44,11 @@ type Slot struct {
 func Load(path string) (Seed, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return Seed{}, err
+		return Seed{}, fmt.Errorf("load seed %s: %w", path, err)
 	}
 	var s Seed
 	if err := json.Unmarshal(b, &s); err != nil {
-		return Seed{}, err
+		return Seed{}, fmt.Errorf("load seed %s: %w", path, err)
 	}
 	return s, nil
 }
@@ -55,6 +56,9 @@ func Load(path string) (Seed, error) {
 func EnumerateSlots(s Seed) ([]Slot, error) {
 	var slots []Slot
 	for _, op := range s.Openings {
+		if op.Side != "white" && op.Side != "black" {
+			return nil, fmt.Errorf("opening %q: invalid side %q", op.Name, op.Side)
+		}
 		userSide := chessx.Side(op.Side)
 		for _, ln := range op.Lines {
 			ucis := make([]string, len(ln.Plies))
