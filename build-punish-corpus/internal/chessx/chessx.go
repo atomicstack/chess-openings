@@ -29,6 +29,8 @@ type Step struct {
 
 // NormalizeFEN drops the halfmove-clock and fullmove-number fields so
 // transposed positions share one key. This is the corpus transposition key.
+// The 4-field output is a key only and must never be passed back to the chess
+// library; use Slot.RawFEN or the original FEN for that.
 func NormalizeFEN(fen string) string {
 	f := strings.Fields(fen)
 	if len(f) < 4 {
