@@ -35,3 +35,27 @@ func TestBlend_UnionOfMoves(t *testing.T) {
 		t.Error("missing maia-only move")
 	}
 }
+
+func TestBlend_MaxFallbackWhenNoMaiaAndSparse(t *testing.T) {
+	lich := map[string]lichess.MoveStat{"e2e4": {Games: 5, Freq: 0.7}}
+	got := Blend(lich, 5, nil, 50)
+	if got["e2e4"].Value != 0.7 {
+		t.Errorf("should use max(lichess freq=0.7, maia prob=0) when sparse and no maia, got %.2f", got["e2e4"].Value)
+	}
+}
+
+func TestBlend_ScoreCarriesRawSignals(t *testing.T) {
+	lich := map[string]lichess.MoveStat{"e2e4": {Games: 400, Freq: 0.6}}
+	maia := map[string]float64{"e2e4": 0.2}
+	got := Blend(lich, 500, maia, 50)
+	score := got["e2e4"]
+	if score.Value != 0.6 {
+		t.Errorf("should use lichess freq when enough games, got %.2f", score.Value)
+	}
+	if score.LichessFreq != 0.6 {
+		t.Errorf("should carry lichess freq raw signal, got %.2f", score.LichessFreq)
+	}
+	if score.MaiaProb != 0.2 {
+		t.Errorf("should carry maia prob raw signal, got %.2f", score.MaiaProb)
+	}
+}
